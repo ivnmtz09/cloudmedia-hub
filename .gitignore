@@ -11,6 +11,7 @@ blob-report/
 playwright/.cache/
 debug_page.png
 *.png
+!docs/screenshots/*.png
 
 # Build artifacts
 dist/
