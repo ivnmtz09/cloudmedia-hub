@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lock, User, Shield, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Lock, User, Shield, AlertCircle, ArrowRight, Eye, EyeOff, X } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 export function LoginModal({ isOpen, onClose }) {
   const { login } = useAuth();
@@ -9,6 +10,7 @@ export function LoginModal({ isOpen, onClose }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const containerRef = useFocusTrap(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -27,18 +29,40 @@ export function LoginModal({ isOpen, onClose }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 animate-fade-in"
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="w-full max-w-md rounded-2xl bg-theme-surface p-7 border border-theme-border shadow-2xl animate-scale-in text-theme-text">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Dimmed & Blurred Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/75 backdrop-blur-md transition-all duration-300 animate-fade-in"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Solid Focused Dialog Container */}
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="login-modal-title"
+        tabIndex="-1"
+        className="relative z-10 w-full max-w-md rounded-2xl bg-theme-surface p-7 border border-theme-border shadow-2xl animate-scale-in text-theme-text outline-none focus:ring-1 focus:ring-theme-accent/40"
+      >
+        {/* Close button if onClose is provided */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 rounded-xl text-theme-muted hover:text-theme-text hover:bg-theme-card transition-colors focus-ring"
+            aria-label="Cerrar modal de autenticación"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+
         {/* Title */}
         <div className="text-center mb-6">
           <div className="inline-flex p-3.5 rounded-2xl bg-theme-accent/15 text-theme-accent mb-3 border border-theme-accent/20">
             <Shield className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-bold tracking-tight text-theme-text">
+          <h2 id="login-modal-title" className="text-xl font-bold tracking-tight text-theme-text">
             Autenticación CloudMedia
           </h2>
           <p className="text-xs text-theme-muted mt-1 leading-relaxed">

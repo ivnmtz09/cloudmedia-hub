@@ -205,8 +205,13 @@ export function UsersPanel({ onToast }) {
 
       {/* Modal Nuevo Usuario */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl bg-theme-surface p-6 border border-theme-border shadow-2xl animate-scale-in text-theme-text">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/75 backdrop-blur-md transition-all duration-300 animate-fade-in"
+            onClick={() => setIsAddModalOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md rounded-2xl bg-theme-surface p-6 border border-theme-border shadow-2xl animate-scale-in text-theme-text outline-none focus:ring-1 focus:ring-theme-accent/40" role="dialog" aria-modal="true">
             <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
               <h2 className="text-base font-semibold">Crear Nuevo Usuario</h2>
               <button
@@ -282,8 +287,13 @@ export function UsersPanel({ onToast }) {
 
       {/* Modal Editar Usuario */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl bg-theme-surface p-6 border border-theme-border shadow-2xl animate-scale-in text-theme-text">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/75 backdrop-blur-md transition-all duration-300 animate-fade-in"
+            onClick={() => setEditingUser(null)}
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md rounded-2xl bg-theme-surface p-6 border border-theme-border shadow-2xl animate-scale-in text-theme-text outline-none focus:ring-1 focus:ring-theme-accent/40" role="dialog" aria-modal="true">
             <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
               <h2 className="text-base font-semibold">Editar {editingUser.username}</h2>
               <button

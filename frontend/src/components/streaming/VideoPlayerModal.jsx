@@ -258,6 +258,35 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
   // 9. Atajos de teclado estilo VLC
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (e.key === 'Tab') {
+        const container = containerRef.current;
+        if (!container) return;
+        const focusableSelectors = [
+          'button:not([disabled])',
+          'input:not([disabled])',
+          '[tabindex]:not([tabindex="-1"])'
+        ].join(',');
+        const focusableElements = Array.from(container.querySelectorAll(focusableSelectors));
+        if (focusableElements.length === 0) {
+          e.preventDefault();
+          return;
+        }
+        const first = focusableElements[0];
+        const last = focusableElements[focusableElements.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first || !container.contains(document.activeElement)) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last || !container.contains(document.activeElement)) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+        return;
+      }
+
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
 
       if (e.code === 'Space' || e.key === ' ' || e.key === 'k' || e.key === 'K') {
@@ -390,17 +419,34 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
   // Remaining time vs Total time
   const remainingSeconds = Math.max(0, (totalDuration || 0) - currentTime);
 
+  // Lock body scroll and set focus on player container
+  useEffect(() => {
+    const orig = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    containerRef.current?.focus();
+    return () => {
+      document.body.style.overflow = orig;
+    };
+  }, []);
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 animate-fade-in"
-      role="dialog"
-      aria-modal="true"
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4">
+      {/* Dimmed & Blurred Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/85 backdrop-blur-md transition-all duration-300 animate-fade-in"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
       <div
         ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Reproductor VLC: ${item.title || item.name}`}
+        tabIndex={0}
         onMouseMove={handleMouseMove}
         onWheel={handleWheel}
-        className="relative w-full h-full max-w-7xl max-h-screen flex flex-col justify-between bg-black select-none overflow-hidden animate-dolly-zoom border border-theme-border shadow-2xl"
+        className="relative z-10 w-full h-full max-w-7xl max-h-screen flex flex-col justify-between bg-black select-none overflow-hidden animate-dolly-zoom border border-theme-border shadow-2xl outline-none focus:ring-1 focus:ring-theme-accent/50"
       >
         {/* ================= BARRA SUPERIOR VLC ================= */}
         <div
@@ -452,7 +498,17 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
                 style={{ backgroundColor: volumeHex + '25', color: volumeHex }}
               >
-                {osdMessage.type === 'volume' ? (
+                {osdMessage.type === 'play' ? (
+                  <Play className="w-4 h-4 fill-current" />
+                ) : osdMessage.type === 'pause' ? (
+                  <Pause className="w-4 h-4 fill-current" />
+                ) : osdMessage.type === 'stop' ? (
+                  <Square className="w-4 h-4 fill-current" />
+                ) : osdMessage.type === 'audio' ? (
+                  <Music2 className="w-4 h-4" />
+                ) : osdMessage.type === 'subtitle' ? (
+                  <Subtitles className="w-4 h-4" />
+                ) : osdMessage.type === 'volume' ? (
                   <VolumeIcon className="w-4 h-4" />
                 ) : osdMessage.type === 'seek' ? (
                   <RotateCw className="w-4 h-4" />
@@ -802,7 +858,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                         onClick={() => {
                           setSelectedSubtitleIndex(-1);
                           setShowSubtitleMenu(false);
-                          triggerOsd('Subtítulos desactivados', null, 'info');
+                          triggerOsd('Subtítulos desactivados', null, 'subtitle');
                         }}
                         className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors"
                         style={
@@ -821,7 +877,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                           onClick={() => {
                             setSelectedSubtitleIndex(sub.index);
                             setShowSubtitleMenu(false);
-                            triggerOsd(`Subtítulo: ${sub.title || sub.language}`, null, 'info');
+                            triggerOsd(`Subtítulo: ${sub.title || sub.language}`, null, 'subtitle');
                           }}
                           className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors"
                           style={

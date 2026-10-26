@@ -284,6 +284,7 @@ test.describe('CloudMedia Hub - E2E Suite (Clean Auth, Profile, Admin Dashboard 
     await expect(page.locator('text=Tu Catálogo Multimedia en la Nube')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('button:has-text("Iniciar Sesión")').first()).toBeVisible();
     await expect(page.locator('text=Autenticación CloudMedia')).not.toBeVisible();
+    await expect(page.locator('text=Sesión Finalizada').or(page.locator('text=Sesión Cerrada'))).toBeVisible({ timeout: 5000 });
   });
 
   test('10. Full-width header without search overflow on desktop, and 4-item bottom bar with top search and scroll restoration on mobile', async ({ page }) => {

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { KeyRound, ShieldAlert, Eye, EyeOff, Check, AlertCircle } from 'lucide-react';
 import { changePassword } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 export function ForcePasswordChangeModal({ isOpen, onPasswordChanged }) {
   const { user, completePasswordChange } = useAuth();
@@ -11,6 +12,7 @@ export function ForcePasswordChangeModal({ isOpen, onPasswordChanged }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const containerRef = useFocusTrap(isOpen);
 
   if (!isOpen) return null;
 
@@ -50,18 +52,28 @@ export function ForcePasswordChangeModal({ isOpen, onPasswordChanged }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 animate-fade-in"
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="w-full max-w-md rounded-2xl bg-theme-surface p-7 border border-amber-500/50 shadow-2xl animate-scale-in text-theme-text">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Dimmed & Blurred Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/75 backdrop-blur-md transition-all duration-300 animate-fade-in"
+        aria-hidden="true"
+      />
+
+      {/* Solid Focused Dialog Container */}
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="force-password-title"
+        tabIndex="-1"
+        className="relative z-10 w-full max-w-md rounded-2xl bg-theme-surface p-7 border border-amber-500/50 shadow-2xl animate-scale-in text-theme-text outline-none focus:ring-1 focus:ring-amber-500/40"
+      >
         {/* Header */}
         <div className="text-center mb-6">
           <div className="inline-flex p-3 rounded-2xl bg-amber-500/15 text-amber-400 mb-3 border border-amber-500/30">
             <ShieldAlert className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-bold tracking-tight text-theme-text">
+          <h2 id="force-password-title" className="text-xl font-bold tracking-tight text-theme-text">
             Cambio de Contraseña Obligatorio
           </h2>
           <p className="text-xs text-theme-muted mt-1.5 leading-relaxed">

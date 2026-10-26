@@ -104,6 +104,19 @@ export default function App() {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [activeTab, user]);
 
+  // Track previous user to trigger smooth logout confirmation toast
+  const prevUserRef = React.useRef(user);
+  useEffect(() => {
+    if (prevUserRef.current && !user) {
+      addToast({
+        type: 'info',
+        title: 'Sesión Finalizada',
+        message: 'Has cerrado sesión exitosamente. Bienvenido a CloudMedia Hub'
+      });
+    }
+    prevUserRef.current = user;
+  }, [user, addToast]);
+
   // Handle manual quota refresh
   const handleRefreshStats = async () => {
     try {
@@ -130,7 +143,7 @@ export default function App() {
   // If user is not authenticated, show the public Landing Page
   if (!user) {
     return (
-      <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-colors duration-300">
+      <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-opacity duration-500 animate-fade-in">
         <SplashScreen />
         <LandingPage onOpenLogin={() => setIsLoginModalOpen(true)} />
         <LoginModal
@@ -153,7 +166,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-opacity duration-500 animate-fade-in">
       {/* Programmatic Splash Screen on initial session load */}
       <SplashScreen />
 

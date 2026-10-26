@@ -1,23 +1,31 @@
 import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Palette, Check, LayoutGrid, X } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 export function ThemePanel({ isOpen, onClose }) {
   const { themeId, changeTheme, gridDensity, setGridDensity, availableThemes } = useTheme();
+  const containerRef = useFocusTrap(isOpen, onClose);
 
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 animate-fade-in"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="theme-panel-title"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Dimmed & Blurred Backdrop */}
       <div
-        className="w-full max-w-lg rounded-2xl bg-theme-surface p-6 border border-theme-border shadow-2xl animate-scale-in text-theme-text"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 bg-black/75 backdrop-blur-md transition-all duration-300 animate-fade-in"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Solid Focused Dialog Container */}
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="theme-panel-title"
+        tabIndex="-1"
+        className="relative z-10 w-full max-w-lg rounded-2xl bg-theme-surface p-6 border border-theme-border shadow-2xl animate-scale-in text-theme-text outline-none focus:ring-1 focus:ring-theme-accent/40"
       >
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-theme-border">
