@@ -62,7 +62,7 @@ export default function Navbar({
     tabs.push({ id: 'users', label: 'Administración', Icon: Shield });
   }
 
-  // Bottom navigation items (exactly 5 items)
+  // Bottom navigation items (exactly 4 items, no redundant search button)
   const bottomNavItems = [
     {
       id: 'streaming',
@@ -77,14 +77,6 @@ export default function Navbar({
       Icon: FolderOpen,
       action: () => setActiveTab('explorer'),
       isActive: activeTab === 'explorer'
-    },
-    {
-      id: 'search',
-      label: 'Buscar',
-      Icon: Search,
-      action: onOpenSearch,
-      isSpecial: true,
-      isActive: false
     },
     {
       id: 'monitoring',
@@ -199,16 +191,16 @@ export default function Navbar({
           </div>
 
           {/* 3. SECCIÓN DERECHA: BÚSQUEDA, CUOTA, TEMA, USUARIO Y BURGER MENU */}
-          <div className="flex items-center justify-end gap-2 sm:gap-2.5 flex-shrink-0">
-            {/* Buscador inteligente en desktop XL */}
-            <div className="w-48 xl:w-56 hidden xl:block">
+          <div className="flex items-center justify-end gap-2 sm:gap-2.5 flex-shrink-0 min-w-0">
+            {/* Buscador inteligente en desktop (md+) */}
+            <div className="w-36 sm:w-44 md:w-48 lg:w-56 xl:w-64 hidden md:block flex-shrink min-w-0">
               <SearchBar onClick={onOpenSearch} />
             </div>
 
-            {/* Botón de búsqueda compacto para pantallas LG y móviles */}
+            {/* Botón de búsqueda exclusivo para móvil (arriba) */}
             <button
               onClick={onOpenSearch}
-              className="xl:hidden min-h-10 min-w-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-theme-muted hover:text-theme-text focus-ring"
+              className="md:hidden min-h-10 min-w-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-theme-muted hover:text-theme-text focus-ring flex-shrink-0"
               aria-label="Buscar películas, series y anime"
               title="Buscar (Ctrl+K)"
             >
@@ -220,7 +212,7 @@ export default function Navbar({
               onClick={() => setActiveTab('monitoring')}
               aria-label={`Cuota en la nube: ${humanUsed} de ${humanMax} (${drivePercentage}%). Ir a Monitor`}
               title={`Cuota: ${humanUsed} / ${humanMax} (${drivePercentage}%)`}
-              className="focus-ring hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all hover:scale-105 min-h-9"
+              className="focus-ring hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all hover:scale-105 h-9 flex-shrink-0 whitespace-nowrap"
               style={{
                 borderColor: quotaAccent + '40',
                 backgroundColor: quotaAccent + '15',
@@ -463,14 +455,14 @@ export default function Navbar({
         </div>
       )}
 
-      {/* ================= TOPBAR INFERIOR (BOTTOM NAV CON 5 ITEMS) ================= */}
+      {/* ================= TOPBAR INFERIOR (BOTTOM NAV CON 4 ITEMS) ================= */}
       <nav
         role="navigation"
         aria-label="Barra de navegación inferior móvil"
         className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-theme-surface border-t border-theme-border shadow-2xl pb-[env(safe-area-inset-bottom)]"
       >
-        <div className="grid grid-cols-5 h-16 max-w-full items-center">
-          {bottomNavItems.map(({ id, label, Icon, action, isActive, isSpecial }) => (
+        <div className="grid grid-cols-4 h-16 max-w-full items-center">
+          {bottomNavItems.map(({ id, label, Icon, action, isActive }) => (
             <button
               key={id}
               onClick={action}
@@ -484,14 +476,12 @@ export default function Navbar({
             >
               <div
                 className={`flex items-center justify-center rounded-xl transition-all ${
-                  isSpecial
-                    ? 'w-9 h-9 bg-theme-accent text-white shadow-md'
-                    : isActive
+                  isActive
                     ? 'w-8 h-8 bg-theme-card border border-theme-border text-theme-accent'
                     : 'w-7 h-7'
                 }`}
               >
-                <Icon className={isSpecial ? 'w-4 h-4' : 'w-4 h-4'} aria-hidden="true" />
+                <Icon className="w-4 h-4" aria-hidden="true" />
               </div>
               <span className={`text-[10px] tracking-tight leading-none ${isActive ? 'font-bold' : 'font-medium'}`}>
                 {label}

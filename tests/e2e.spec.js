@@ -286,10 +286,10 @@ test.describe('CloudMedia Hub - E2E Suite (Clean Auth, Profile, Admin Dashboard 
     await expect(page.locator('text=Autenticación CloudMedia')).not.toBeVisible();
   });
 
-  test('10. Full-width header with centered tabs on desktop, and responsive 5-item bottom bar with burger menu drawer on mobile', async ({ page }) => {
+  test('10. Full-width header without search overflow on desktop, and 4-item bottom bar with top search and scroll restoration on mobile', async ({ page }) => {
     await loginUser(page, 'ivnmtz09');
 
-    // Desktop: Check full-width header and tabs
+    // Desktop: Check full-width header, tabs, and search bar without collision
     const desktopTabs = page.locator('nav[aria-label="Secciones principales"]');
     await expect(desktopTabs).toBeVisible();
     await expect(page.locator('#tab-streaming')).toBeVisible();
@@ -297,20 +297,37 @@ test.describe('CloudMedia Hub - E2E Suite (Clean Auth, Profile, Admin Dashboard 
     await expect(page.locator('#tab-monitoring')).toBeVisible();
     await expect(page.locator('#tab-users')).toBeVisible();
 
+    const desktopSearch = page.locator('header input, header button[aria-label="Abrir buscador inteligente"]').first();
+    await expect(desktopSearch).toBeVisible();
+
+    const quotaPill = page.locator('header button[aria-label*="Cuota en la nube"]');
+    await expect(quotaPill).toBeVisible();
+
+    // Verify search and quota do not overlap
+    const searchBox = await desktopSearch.boundingBox();
+    const quotaBox = await quotaPill.boundingBox();
+    if (searchBox && quotaBox) {
+      expect(searchBox.x + searchBox.width).toBeLessThanOrEqual(quotaBox.x + 1);
+    }
+
     // Switch to mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
 
-    // Verify desktop tabs are hidden and 5-item bottom nav is visible
+    // Verify desktop tabs are hidden
     await expect(desktopTabs).not.toBeVisible();
+
+    // Top header has the search button (above)
+    const mobileTopSearch = page.locator('header button[aria-label="Buscar películas, series y anime"]');
+    await expect(mobileTopSearch).toBeVisible();
+
+    // Bottom nav bar has exactly 4 items (no redundant search)
     const bottomNav = page.locator('nav[aria-label="Barra de navegación inferior móvil"]');
     await expect(bottomNav).toBeVisible();
-
-    // Verify all 5 bottom items
     await expect(page.locator('#mobile-tab-streaming')).toBeVisible();
     await expect(page.locator('#mobile-tab-explorer')).toBeVisible();
-    await expect(page.locator('#mobile-tab-search')).toBeVisible();
     await expect(page.locator('#mobile-tab-monitoring')).toBeVisible();
     await expect(page.locator('#mobile-tab-users')).toBeVisible();
+    await expect(page.locator('#mobile-tab-search')).not.toBeVisible();
 
     // Test burger menu button and drawer
     const burgerBtn = page.locator('button[aria-label*="menú de navegación"]');
@@ -327,8 +344,12 @@ test.describe('CloudMedia Hub - E2E Suite (Clean Auth, Profile, Admin Dashboard 
     await page.locator('button[aria-label="Cerrar panel móvil"]').click();
     await expect(page.locator('aside[aria-label="Menú principal de navegación"]')).not.toBeVisible();
 
-    // Test mobile tab navigation
+    // Scroll down then navigate: verify scroll restoration to top (0)
+    await page.evaluate(() => window.scrollTo(0, 300));
     await page.locator('#mobile-tab-explorer').click();
     await expect(page.getByRole('button', { name: 'Raíz (PC_Storage)' })).toBeVisible({ timeout: 5000 });
+
+    const scrollY = await page.evaluate(() => window.scrollY);
+    expect(scrollY).toBe(0);
   });
 });

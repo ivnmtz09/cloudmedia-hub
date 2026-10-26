@@ -40,6 +40,10 @@ export function AdminDashboard({ stats, onRefreshStats, addToast }) {
     loadDashboardData();
   }, [loadDashboardData]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [activeSection]);
+
   const handleSyncMetadata = async () => {
     try {
       setSyncingMeta(true);
