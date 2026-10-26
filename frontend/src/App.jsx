@@ -12,10 +12,13 @@ import { LoginModal } from './components/auth/LoginModal';
 import { ForcePasswordChangeModal } from './components/auth/ForcePasswordChangeModal';
 import { CommandPalette } from './components/search/CommandPalette';
 import VideoPlayerModal from './components/streaming/VideoPlayerModal';
+import ServerOfflineFallback from './components/common/ServerOfflineFallback';
 import { useAuth } from './contexts/AuthContext';
+import { useServerOffline } from './contexts/ServerOfflineContext';
 import { fetchStats, refreshStats, fetchCatalog, fetchMetadata } from './services/api';
 
 export default function App() {
+  const { isServerOffline, retryConnection } = useServerOffline();
   const {
     user,
     hasRole,
@@ -139,6 +142,11 @@ export default function App() {
       setIsRefreshingStats(false);
     }
   };
+
+  // Si el servidor local está apagado, desmonta el contenido y muestra la pantalla fallback offline
+  if (isServerOffline) {
+    return <ServerOfflineFallback onRetry={retryConnection} />;
+  }
 
   // If user is not authenticated, show the public Landing Page
   if (!user) {

@@ -2,8 +2,15 @@ import React from 'react';
 import { Cloud, HardDrive, RefreshCw, Database, Clock, FileCheck, AlertTriangle } from 'lucide-react';
 import AnimatedCounter from '../common/AnimatedCounter';
 import MorphButton from '../common/MorphButton';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function QuotaDashboard({ stats, isRefreshing, onRefresh }) {
+  const { user } = useAuth();
+
+  // Validación de seguridad por roles: solo admin o moderator
+  if (!user || (user.role !== 'admin' && user.role !== 'moderator')) {
+    return null;
+  }
   // Drive Stats
   const drive = stats?.googleDrive || stats || {};
   const drivePercent = drive.percentage ?? 0;

@@ -52,11 +52,16 @@ export default function Navbar({
     };
   }, [isMobileMenuOpen]);
 
+  const canAccessStorage = user && (user.role === 'admin' || user.role === 'moderator');
+
   const tabs = [
     { id: 'streaming', label: 'Cine & Series', Icon: Film },
-    { id: 'explorer', label: 'Explorador', Icon: FolderOpen },
-    { id: 'monitoring', label: 'Cuota & Limpieza', Icon: HardDrive }
+    { id: 'explorer', label: 'Explorador', Icon: FolderOpen }
   ];
+
+  if (canAccessStorage) {
+    tabs.push({ id: 'monitoring', label: 'Cuota & Limpieza', Icon: HardDrive });
+  }
 
   if (hasRole('admin')) {
     tabs.push({ id: 'users', label: 'Administración', Icon: Shield });
@@ -77,30 +82,36 @@ export default function Navbar({
       Icon: FolderOpen,
       action: () => setActiveTab('explorer'),
       isActive: activeTab === 'explorer'
-    },
-    {
+    }
+  ];
+
+  if (canAccessStorage) {
+    bottomNavItems.push({
       id: 'monitoring',
       label: 'Cuota',
       Icon: HardDrive,
       action: () => setActiveTab('monitoring'),
       isActive: activeTab === 'monitoring'
-    },
-    hasRole('admin')
-      ? {
-          id: 'users',
-          label: 'Admin',
-          Icon: Shield,
-          action: () => setActiveTab('users'),
-          isActive: activeTab === 'users'
-        }
-      : {
-          id: 'menu',
-          label: 'Menú',
-          Icon: Menu,
-          action: () => setIsMobileMenuOpen(true),
-          isActive: isMobileMenuOpen
-        }
-  ];
+    });
+  }
+
+  if (hasRole('admin')) {
+    bottomNavItems.push({
+      id: 'users',
+      label: 'Admin',
+      Icon: Shield,
+      action: () => setActiveTab('users'),
+      isActive: activeTab === 'users'
+    });
+  } else {
+    bottomNavItems.push({
+      id: 'menu',
+      label: 'Menú',
+      Icon: Menu,
+      action: () => setIsMobileMenuOpen(true),
+      isActive: isMobileMenuOpen
+    });
+  }
 
   // Quota color semantics
   let quotaAccent = '#10b981'; // green
@@ -207,45 +218,49 @@ export default function Navbar({
               <Search className="w-4 h-4 text-theme-accent" />
             </button>
 
-            {/* Píldora de cuota en Google Drive */}
-            <button
-              onClick={() => setActiveTab('monitoring')}
-              aria-label={`Cuota en la nube: ${humanUsed} de ${humanMax} (${drivePercentage}%). Ir a Monitor`}
-              title={`Cuota: ${humanUsed} / ${humanMax} (${drivePercentage}%)`}
-              className="focus-ring hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all hover:scale-105 h-9 flex-shrink-0 whitespace-nowrap"
-              style={{
-                borderColor: quotaAccent + '40',
-                backgroundColor: quotaAccent + '15',
-                color: 'var(--color-text)'
-              }}
-            >
-              <span
-                className="w-2 h-2 rounded-full animate-pulse flex-shrink-0"
-                style={{ backgroundColor: quotaAccent }}
-                aria-hidden="true"
-              />
-              <span className="text-theme-muted hidden 2xl:inline">Nube:</span>
-              <span className="font-bold text-xs" style={{ color: quotaAccent }}>
-                {drivePercentage}%
-              </span>
-              <span className="hidden 2xl:inline text-theme-muted text-[11px]">
-                ({humanUsed})
-              </span>
-            </button>
+            {/* Píldora de cuota en Google Drive y botón de sincronización (solo admin o moderator) */}
+            {canAccessStorage && (
+              <>
+                <button
+                  onClick={() => setActiveTab('monitoring')}
+                  aria-label={`Cuota en la nube: ${humanUsed} de ${humanMax} (${drivePercentage}%). Ir a Monitor`}
+                  title={`Cuota: ${humanUsed} / ${humanMax} (${drivePercentage}%)`}
+                  className="focus-ring hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all hover:scale-105 h-9 flex-shrink-0 whitespace-nowrap"
+                  style={{
+                    borderColor: quotaAccent + '40',
+                    backgroundColor: quotaAccent + '15',
+                    color: 'var(--color-text)'
+                  }}
+                >
+                  <span
+                    className="w-2 h-2 rounded-full animate-pulse flex-shrink-0"
+                    style={{ backgroundColor: quotaAccent }}
+                    aria-hidden="true"
+                  />
+                  <span className="text-theme-muted hidden 2xl:inline">Nube:</span>
+                  <span className="font-bold text-xs" style={{ color: quotaAccent }}>
+                    {drivePercentage}%
+                  </span>
+                  <span className="hidden 2xl:inline text-theme-muted text-[11px]">
+                    ({humanUsed})
+                  </span>
+                </button>
 
-            {/* Sincronización manual de cuota */}
-            <button
-              onClick={onRefreshStats}
-              disabled={isRefreshingStats}
-              aria-label="Sincronizar cuota"
-              title="Sincronizar cuota con Google Drive"
-              className="focus-ring hidden sm:flex items-center justify-center w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-theme-muted hover:text-theme-text transition-all active:scale-95 disabled:opacity-50"
-            >
-              <RefreshCw
-                className={`w-3.5 h-3.5 ${isRefreshingStats ? 'animate-spin text-theme-accent' : ''}`}
-                aria-hidden="true"
-              />
-            </button>
+                {/* Sincronización manual de cuota */}
+                <button
+                  onClick={onRefreshStats}
+                  disabled={isRefreshingStats}
+                  aria-label="Sincronizar cuota"
+                  title="Sincronizar cuota con Google Drive"
+                  className="focus-ring hidden sm:flex items-center justify-center w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-theme-muted hover:text-theme-text transition-all active:scale-95 disabled:opacity-50"
+                >
+                  <RefreshCw
+                    className={`w-3.5 h-3.5 ${isRefreshingStats ? 'animate-spin text-theme-accent' : ''}`}
+                    aria-hidden="true"
+                  />
+                </button>
+              </>
+            )}
 
             {/* Selector de Tema */}
             <button

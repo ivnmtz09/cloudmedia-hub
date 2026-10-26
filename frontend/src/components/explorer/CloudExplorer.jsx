@@ -215,7 +215,7 @@ export default function CloudExplorer({ addToast }) {
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto min-h-[240px] pb-16">
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider text-[11px]">

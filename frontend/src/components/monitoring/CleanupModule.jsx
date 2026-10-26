@@ -6,8 +6,10 @@ import {
 import MoveToCloudModal from './MoveToCloudModal';
 import DeleteLocalConfirmModal from './DeleteLocalConfirmModal';
 import { fetchCleanupFiles } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function CleanupModule({ onFileMovedOrDeleted, addToast }) {
+  const { user } = useAuth();
   const [data, setData] = useState({ count: 0, totalBytes: 0, humanTotalSize: '0 B', files: [] });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -33,9 +35,17 @@ export default function CleanupModule({ onFileMovedOrDeleted, addToast }) {
     }
   };
 
+  const isAuthorized = user && (user.role === 'admin' || user.role === 'moderator');
+
   useEffect(() => {
-    loadCleanup();
-  }, []);
+    if (isAuthorized) {
+      loadCleanup();
+    }
+  }, [isAuthorized]);
+
+  if (!isAuthorized) {
+    return null;
+  }
 
   const handleActionComplete = () => {
     loadCleanup();
