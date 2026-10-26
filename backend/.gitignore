@@ -1,0 +1,5 @@
+node_modules/
+.cache/
+backend.log
+server.pid
+.env
