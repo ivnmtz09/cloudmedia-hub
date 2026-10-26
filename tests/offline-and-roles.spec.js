@@ -19,6 +19,13 @@ test.describe('CloudMedia Hub - Fallback Offline & Role-Based Storage Quotas', (
     await passInput.fill('1234567890');
     await page.locator('button[type="submit"]:has-text("Iniciar Sesión")').click();
 
+    // Si la contraseña ya fue cambiada en una ejecución previa, usar la clave actualizada
+    const isInvalid = await page.locator('text=Credenciales inválidas').waitFor({ state: 'visible', timeout: 1500 }).then(() => true).catch(() => false);
+    if (isInvalid) {
+      await passInput.fill('322-520iM.');
+      await page.locator('button[type="submit"]:has-text("Iniciar Sesión")').click();
+    }
+
     // Completar cambio de contraseña si lo solicita
     const forceHeader = page.locator('text=Cambio de Contraseña Obligatorio');
     const needsPasswordChange = await forceHeader.waitFor({ state: 'visible', timeout: 2500 }).then(() => true).catch(() => false);

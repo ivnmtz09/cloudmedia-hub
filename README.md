@@ -1,72 +1,96 @@
-# CloudMedia Hub
-
 <div align="center">
-  <img src="docs/screenshots/01_landing_page.png" alt="CloudMedia Hub Landing Page" width="100%" />
+  <img src="docs/logo.svg" width="96" height="96" alt="CloudMedia Hub Logo" />
+  <h1>CloudMedia Hub</h1>
 
   <p align="center">
     <strong>Plataforma cinematográfica modular para streaming multimedia privado de alto rendimiento y gestión de almacenamiento en la nube integrada con rclone, Google Drive, transcodificación en tiempo real y seguridad RBAC.</strong>
   </p>
 
   <p align="center">
-    <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black" alt="React" />
+    <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React" />
     <img src="https://img.shields.io/badge/Vite-8.3-646CFF?logo=vite&logoColor=white" alt="Vite" />
     <img src="https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
     <img src="https://img.shields.io/badge/Node.js-%3E=18-339933?logo=node.js&logoColor=white" alt="Node.js" />
     <img src="https://img.shields.io/badge/Express-4.21-000000?logo=express&logoColor=white" alt="Express" />
-    <img src="https://img.shields.io/badge/Playwright-E2E-45ba4b?logo=playwright&logoColor=white" alt="Playwright" />
+    <img src="https://img.shields.io/badge/Playwright-12%20Tests%20Passing-45ba4b?logo=playwright&logoColor=white" alt="Playwright" />
     <img src="https://img.shields.io/badge/rclone-Google%20Drive-orange" alt="rclone" />
   </p>
+
+  <img src="docs/screenshots/01_landing_page.png" alt="CloudMedia Hub Landing Page" width="100%" />
 </div>
 
 ---
 
-## Índice
+## Indice
 
-- [Galería del Sistema](#-galería-del-sistema)
-  - [Landing Page de Bienvenida](#1-landing-page-de-bienvenida)
-  - [Autenticación con Fondo Difuminado](#2-autenticación-y-cambio-obligatorio-de-clave)
-  - [Catálogo Principal y Reproducción](#3-catálogo-principal-y-navegación-de-ancho-completo)
-  - [Showcase de los 5 Temas Cinemáticos Puros](#4-showcase-de-los-5-temas-cinemáticos-puros)
-  - [Reproductor Estilo VLC con Audio hasta 200%](#5-reproductor-estilo-vlc-con-audio-web-api-hasta-200)
-  - [Explorador de Almacenamiento en la Nube](#6-explorador-de-almacenamiento-en-la-nube-rclone)
-  - [Dashboard de Administración Integral](#7-dashboard-de-administración-integral)
-  - [Experiencia Móvil Responsiva](#8-experiencia-móvil-responsiva)
-- [Arquitectura y Capacidades Técnicas](#-arquitectura-y-capacidades-técnicas)
-- [Gestión de Usuarios y Roles (RBAC)](#-gestión-de-usuarios-y-roles-rbac)
-- [Estructura del Proyecto](#-estructura-del-proyecto)
-- [Puesta en Marcha y Despliegue](#-puesta-en-marcha-y-despliegue)
-- [Variables de Entorno (Vercel & Local)](#-variables-de-entorno)
-- [Pruebas Automatizadas E2E (Playwright)](#-pruebas-automatizadas-e2e)
+- [Arquitectura del Sistema](#arquitectura-del-sistema)
+- [Galeria del Sistema](#galeria-del-sistema)
+  - [1. Landing Page con UX in Motion](#1-landing-page-con-ux-in-motion)
+  - [2. Fallback UI Global para Servidor Local Offline](#2-fallback-ui-global-para-servidor-local-offline)
+  - [3. Autenticacion y Cambio Obligatorio de Clave](#3-autenticacion-y-cambio-obligatorio-de-clave)
+  - [4. Catalogo Principal y Navegacion de Ancho Completo](#4-catalogo-principal-y-navegacion-de-ancho-completo)
+  - [5. Showcase de los 5 Temas Cinematicos Puros](#5-showcase-de-los-5-temas-cinematicos-puros)
+  - [6. Reproductor VLC con Audio al 200%, Miniatura y Pantalla Completa Real](#6-reproductor-vlc-con-audio-al-200-miniatura-y-pantalla-completa-real)
+  - [7. Administrador de Archivos con Atajos Unificados (...)](#7-administrador-de-archivos-con-atajos-unificados-)
+  - [8. Dashboard de Almacenamiento y Cuotas Protegido por Roles](#8-dashboard-de-almacenamiento-y-cuotas-protegido-por-roles)
+  - [9. Experiencia Movil Responsiva con Safe Area Insets](#9-experiencia-movil-responsiva-con-safe-area-insets)
+- [Capacidades Tecnicas y Principios UX in Motion](#capacidades-tecnicas-y-principios-ux-in-motion)
+- [Gestion de Usuarios y Roles (RBAC)](#gestion-de-usuarios-y-roles-rbac)
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Puesta en Marcha y Despliegue](#puesta-en-marcha-y-despliegue)
+- [Variables de Entorno](#variables-de-entorno)
+- [Pruebas Automatizadas E2E (Playwright)](#pruebas-automatizadas-e2e)
 
 ---
 
-## 📸 Galería del Sistema
+## Arquitectura del Sistema
 
-### 1. Landing Page de Bienvenida
-Página pública inicial antes de iniciar sesión y destino automático tras el cierre de sesión, con métricas clave, capacidades técnicas y selector de temas.
+CloudMedia Hub opera bajo una arquitectura distribuida híbrida:
+
+1. **Frontend en Vercel o Servidor Local:**
+   - Aplicación construida en React 19 y Tailwind CSS.
+   - Interceptor centralizado de red (`apiFetch`) que detecta fallos de conectividad (`TypeError: Failed to fetch`, `ERR_CONNECTION_REFUSED`, `NetworkError` o timeout).
+   - Pantalla de reserva offline global a 100vh (`ServerOfflineFallback`) que desmonta el contenido si el backend no está disponible y proporciona reintento en caliente.
+2. **Backend Local (PC Base):**
+   - Servidor Node.js y Express montado sobre la estación local donde residen las unidades de almacenamiento físico y el montaje rclone hacia Google Drive (`PC_Storage`).
+   - Servicio `ffmpeg` y `ffprobe` para streaming HTTP 206 y remuxing en tiempo real sin precarga de archivos enteros.
+   - API REST segura con autenticación basada en JWT, control jerárquico de roles (RBAC) y hashes bcrypt.
+
+---
+
+## Galeria del Sistema
+
+### 1. Landing Page con UX in Motion
+Portada interactiva con showcase tridimensional que aplica principios de movimiento (Dimensionalidad, Parallax, Staggered Easing y Value Change), permitiendo previsualizar los módulos del sistema con tarjetas interactivas antes de iniciar sesión.
 
 ![Landing Page](docs/screenshots/01_landing_page.png)
 
 ---
 
-### 2. Autenticación y Cambio Obligatorio de Clave
-Flujo de acceso limpio con fondo oscurecido y difuminado (`backdrop-blur-md`), atrapado de foco accesible (`useFocusTrap`) y validación estricta de primer inicio de sesión.
+### 2. Fallback UI Global para Servidor Local Offline
+Cuando la PC base se encuentra apagada o la conexión se interrumpe, el frontend en Vercel intercepta el error de red a nivel global, desmonta las rutas y despliega una interfaz a pantalla completa (100vh, fondo oscuro `bg-gray-900`) con el mensaje centrado:
+`"Servidor local apagado. Enciende la PC base para acceder a CloudMedia"` y botón de reintento automático.
+
+---
+
+### 3. Autenticacion y Cambio Obligatorio de Clave
+Flujo de acceso limpio con fondo oscurecido y difuminado (`backdrop-blur-md`), atrapado de foco accesible (`useFocusTrap`) y exigencia obligatoria de cambio de clave para nuevos usuarios.
 
 ![Login Modal](docs/screenshots/02_login_modal.png)
 
 ---
 
-### 3. Catálogo Principal y Navegación de Ancho Completo
-Barra de navegación de ancho completo (`w-full`) con pestañas centradas naturalmente, buscador integrado (`Ctrl+K`), métricas de cuota Google Drive y tarjetas de catálogo con ficha técnica 3D.
+### 4. Catalogo Principal y Navegacion de Ancho Completo
+Barra superior de navegación de ancho completo (`w-full`) con buscador global (`Ctrl+K`), métricas de cuota (exclusivas para admin/mod) y tarjetas de catálogo con ficha técnica tridimensional reversible.
 
 ![Dashboard Redflix](docs/screenshots/03_dashboard_redflix.png)
 
 ---
 
-### 4. Showcase de los 5 Temas Cinemáticos Puros
-Eliminación total de glassmorphism translúcido en favor de superficies 100% sólidas y opacas de alta definición inspiradas en plataformas de streaming líderes:
+### 5. Showcase de los 5 Temas Cinematicos Puros
+Superficies sólidas de alta definición sin glassmorphism translúcido:
 
-| Tema | Previsualización | Paleta y Estilo |
+| Tema | Previsualizacion | Paleta y Estilo |
 | :--- | :--- | :--- |
 | **Redflix** *(Predeterminado)* | <img src="docs/screenshots/03_dashboard_redflix.png" width="450" /> | Fondo carbón `#141414`, superficies `#1a1a1a`, acento rojo cinematográfico `#E50914`. |
 | **Magic Plus** | <img src="docs/screenshots/04_theme_magic_plus.png" width="450" /> | Fondo azul medianoche `#0d1b2a`, superficies `#1b263b`, acento cian eléctrico `#0072d2`. |
@@ -74,83 +98,79 @@ Eliminación total de glassmorphism translúcido en favor de superficies 100% s�
 | **Max Cinema** | <img src="docs/screenshots/06_theme_max_cinema.png" width="450" /> | Fondo azul noche `#080b11`, superficies `#121826`, acento púrpura neón `#7C3AED`. |
 | **Prime Vision** | <img src="docs/screenshots/07_theme_prime_vision.png" width="450" /> | Fondo azul carbón `#0f172a`, superficies `#1e293b`, acento cian institucional `#00a8e1`. |
 
-#### Selector de Apariencia y Densidad de Cuadrícula
+#### Selector de Apariencia
 ![Selector de Apariencia](docs/screenshots/08_theme_switcher_modal.png)
 
 ---
 
-### 5. Reproductor Estilo VLC con Audio Web API hasta 200%
-Reproductor avanzado con remuxing instantáneo para contenedores MKV y MP4, OSD contextual con iconos semánticos (`Play`, `Pause`, `Volume`, `Audio`, `Subtítulos`), selector dinámico de pistas de audio (Dual/Latino) y sobreamplificación de volumen hasta 200%.
+### 6. Reproductor VLC con Audio al 200%, Miniatura y Pantalla Completa Real
+Motor de reproducción de alto rendimiento montado con React Portal directamente sobre el body:
+- **Pantalla Completa Real (F)**: Invoca la API nativa de pantalla completa ocupando el 100% físico del monitor (`100vw` × `100vh`) sin márgenes de ventana.
+- **Modo Miniatura Flotante (PiP)**: Minimiza el reproductor a una ventana compacta en la esquina inferior derecha para continuar navegando mientras el video sigue en marcha.
+- **Audio Web API hasta 200%**: Ganancia con AudioContext y GainNode, medidor triangular estilo VLC y selector dinámico de pistas de audio (Dual/Latino) y subtítulos.
+- **Controles Tactiles Centrales**: Botones táctiles de gran tamaño (`-10s`, `Play/Pause`, `+10s`), doble toque para avanzar o retroceder y control responsivo de volumen.
 
 ![Reproductor VLC](docs/screenshots/09_vlc_player_playback.png)
 
 ---
 
-### 6. Explorador de Almacenamiento en la Nube (rclone)
-Explorador de carpetas sincronizado con Google Drive (`PC_Storage`), salto rápido por categorías, subida de archivos pesados y reproducción directa.
+### 7. Administrador de Archivos con Atajos Unificados (...)
+Tanto en vista cuadrícula como en vista lista, los botones dispersos se unificaron en un único botón de tres puntos (`...`) que despliega un menú contextual flotante para editar/renombrar, eliminar, descargar y reproducir, optimizado para celulares y pantallas de escritorio sin interferir con la navegación táctil.
 
 ![Cloud Explorer](docs/screenshots/10_cloud_explorer.png)
 
 ---
 
-### 7. Dashboard de Administración Integral
-Panel administrativo con barra de navegación lateral fija (`aside`), métricas en tiempo real con contadores animados, auditoría de eventos del sistema y gestión CRUD de roles y usuarios.
+### 8. Dashboard de Almacenamiento y Cuotas Protegido por Roles
+Las tarjetas de consumo de Google Drive, Disco Local del Sistema y el Módulo de Limpieza Local cuentan con validación estricta por roles (`user.role === 'admin' || user.role === 'moderator'`). Para usuarios convencionales (`viewer` / `user`), estos paneles retornan null o derivan directamente al Explorador multimedia sin mostrar ningún rastro de cuotas.
 
 ![Admin Dashboard](docs/screenshots/11_admin_dashboard.png)
 
 ---
 
-### 8. Experiencia Móvil Responsiva
-Diseño optimizado para pantallas táctiles con barra de navegación inferior de **4 botones limpios**, buscador en la cabecera superior y panel deslizante (drawer) accesible con tarjeta de cuota y perfil.
+### 9. Experiencia Movil Responsiva con Safe Area Insets
+- Altura dinámica con `100dvh` y `safe-area-insets` para prevenir cortes con las barras de navegación de los navegadores móviles.
+- Barra inferior fija de 4 botones limpios.
+- Menús desplegables con apertura superior para evitar desbordamientos de pantalla.
 
 <div align="center">
-  <img src="docs/screenshots/12_mobile_view.png" width="380" alt="Vista Móvil" />
+  <img src="docs/screenshots/12_mobile_view.png" width="380" alt="Vista Movil" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="docs/screenshots/13_mobile_drawer.png" width="380" alt="Drawer Móvil" />
+  <img src="docs/screenshots/13_mobile_drawer.png" width="380" alt="Drawer Movil" />
 </div>
 
 ---
 
-## ⚡ Arquitectura y Capacidades Técnicas
+## Capacidades Tecnicas y Principios UX in Motion
 
-1. **Streaming HTTP 206 & Remuxing en Vivo:**
-   - Soporte nativo de rangos parciales HTTP 206 y remuxing en tiempo real con `ffmpeg` y `ffprobe`.
-   - Salto temporal instantáneo con parámetro `?start=<segundos>` posicionado antes del archivo de entrada (`-ss <seg> -i <path>`) para evitar retrasos de precarga.
-2. **Motor de Audio Web API (VLC 200% GainNode):**
-   - Conexión del elemento `<video>` con `AudioContext` y `GainNode` para alcanzar hasta 200% de volumen real.
-   - OSD visual contextual con indicación porcentual y colores semánticos: verde (0-100%), ámbar (100-150%) y rojo (150-200%).
-3. **Superficies Sólidas y Difuminado de Fondo:**
-   - Cero glassmorphism translúcido en las superficies operativas: bordes nítidos y colores 100% opacos.
-   - Al desplegar modales o el reproductor, el fondo se oscurece y difumina suavemente (`bg-black/75 backdrop-blur-md`).
-4. **Atrapado de Foco y Accesibilidad WCAG (`useFocusTrap`):**
-   - Al abrir cualquier modal, el foco del teclado (`Tab` / `Shift+Tab`) queda confinado estrictamente en el diálogo activo para evitar que el usuario interactúe involuntariamente con la página de fondo.
-   - Salida rápida con tecla `Escape` y retorno de foco al elemento de origen.
-5. **Scroll Restoration Inteligente:**
-   - `history.scrollRestoration = 'manual'` activo en el navegador.
-   - Retorno automático e instantáneo a la posición superior (`top: 0`) al cambiar de pestaña principal, navegar en subcarpetas del explorador o alternar secciones del panel de administración.
-6. **Command Palette Global (`Ctrl+K`):**
-   - Buscador rápido con atajo de teclado y filtros combinados de categorías (`Películas`, `Series`, `Anime`), resoluciones (`1080p`, `720p`) e idiomas de audio (`DUAL`, `LAT`).
-7. **Cero Emojis:**
-   - Uso riguroso de iconografía vectorial SVG mediante [Lucide React](https://lucide.dev/).
+1. **Easing (Aceleracion y Suavizado):**
+   - Transiciones reguladas por curvas cubic-bezier (`cubic-bezier(0.16, 1, 0.3, 1)`) que simulan inercia física en modales, botones y paneles desplegables.
+2. **Offset & Delay (Desfase y Retardo / Stagger):**
+   - Aparición secuencial escalonada de 60ms a 120ms entre tarjetas del catálogo, métricas y elementos de la Landing Page para guiar rítmicamente la lectura visual.
+3. **Dimensionalidad y Parallax 3D:**
+   - Previsualización interactiva con cálculo trigonométrico en tiempo real (`rotateX`, `rotateY`) según la posición del cursor en pantalla.
+4. **Value Change (Cambio Dinamico de Valor):**
+   - Contadores numéricos progresivos con aceleración no lineal en las métricas de almacenamiento y rendimiento del sistema.
+5. **Streaming HTTP 206 y Remuxing MKV en Vivo:**
+   - Soporte nativo de rangos parciales y salto de tiempo instantáneo mediante ffmpeg con bandera `-ss` antes del archivo de entrada (`-i`).
+6. **Zero Emojis:**
+   - Iconografía técnica y consistente suministrada exclusivamente por Lucide React en formato SVG vectorial.
 
 ---
 
-## 👥 Gestión de Usuarios y Roles (RBAC)
+## Gestion de Usuarios y Roles (RBAC)
 
 El sistema opera con control de acceso basado en roles jerárquicos:
 
 | Usuario | Rol | Nivel | Permisos Principales |
 | :--- | :--- | :---: | :--- |
-| `ivnmtz09` | `admin` | **3** | Control total, métricas, gestión CRUD de usuarios, cambio de roles, ajuste del servidor y sincronización manual de cuota. |
-| `baxter`, `bimo`, `juank` | `moderator` | **2** | Streaming, subida clasificada (árbol de series/temporadas) y enriquecimiento de metadatos. |
-| `bozame`, `saudiki`, `manu`, `mawi`, `juliao`, `carlos`, `karlos`, `hasmid` | `viewer` | **1** | Acceso al catálogo multimedia, reproducción VLC, búsqueda y configuración de perfil. |
-
-> [!NOTE]
-> Todos los usuarios cuentan con la clave inicial `1234567890`. Al primer inicio de sesión se exige el cambio de contraseña por una personalizada de al menos 8 caracteres.
+| `ivnmtz09` | `admin` | **3** | Control total, métricas de cuota, gestión CRUD de usuarios, cambio de roles, ajuste del servidor y sincronización manual de cuota. |
+| `baxter`, `bimo`, `juank` | `moderator` | **2** | Streaming, subida clasificada (árbol de series/temporadas), dashboard de cuotas y enriquecimiento de metadatos. |
+| `bozame`, `saudiki`, `manu`, `mawi`, `juliao`, `carlos`, `karlos`, `hasmid` | `viewer` | **1** | Acceso al catálogo multimedia, reproducción VLC, búsqueda y perfil. Sin acceso a paneles de cuotas de almacenamiento. |
 
 ---
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 cloudmedia-hub/
@@ -182,35 +202,41 @@ cloudmedia-hub/
 │   │   │   ├── admin/
 │   │   │   ├── auth/
 │   │   │   ├── common/
+│   │   │   │   ├── CloudMediaLogo.jsx
+│   │   │   │   ├── ServerOfflineFallback.jsx
+│   │   │   │   └── ThemePanel.jsx
 │   │   │   ├── explorer/
+│   │   │   │   ├── CloudExplorer.jsx
+│   │   │   │   └── FileItem.jsx
 │   │   │   ├── landing/
+│   │   │   │   └── LandingPage.jsx
 │   │   │   ├── monitoring/
-│   │   │   ├── profile/
-│   │   │   ├── search/
-│   │   │   ├── streaming/
-│   │   │   └── upload/
+│   │   │   │   ├── CleanupModule.jsx
+│   │   │   │   ├── MonitoringView.jsx
+│   │   │   │   └── QuotaDashboard.jsx
+│   │   │   └── streaming/
+│   │   │       └── VideoPlayerModal.jsx
 │   │   ├── contexts/
 │   │   │   ├── AuthContext.jsx
+│   │   │   ├── ServerOfflineContext.jsx
 │   │   │   └── ThemeContext.jsx
-│   │   ├── hooks/
-│   │   │   └── useFocusTrap.js
-│   │   ├── styles/
-│   │   │   ├── animations.css
-│   │   │   └── themes.js
-│   │   └── services/api.js
-│   ├── tailwind.config.js
+│   │   ├── services/api.js
+│   │   ├── styles/animations.css
+│   │   └── index.css
 │   └── package.json
 ├── docs/
+│   ├── logo.svg
 │   └── screenshots/
 ├── tests/
-│   └── e2e.spec.js
+│   ├── e2e.spec.js
+│   └── offline-and-roles.spec.js
 ├── playwright.config.js
 └── README.md
 ```
 
 ---
 
-## 🚀 Puesta en Marcha y Despliegue
+## Puesta en Marcha y Despliegue
 
 ### Prerrequisitos
 - **Node.js:** Versión 18 o superior.
@@ -223,10 +249,10 @@ cloudmedia-hub/
 cd frontend
 npm run build
 
-# 2. Reiniciar el servicio backend en segundo plano
+# 2. Iniciar o reiniciar el backend en la PC base
 systemctl --user restart cloudmedia-hub-backend.service
 
-# 3. Verificar estado del servicio
+# 3. Comprobar estado del servicio
 systemctl --user status cloudmedia-hub-backend.service
 ```
 
@@ -237,7 +263,7 @@ systemctl --user status cloudmedia-hub-backend.service
 
 ---
 
-## ⚙️ Variables de Entorno
+## Variables de Entorno
 
 ### Frontend (.env)
 ```env
@@ -254,9 +280,9 @@ JWT_SECRET=tu_clave_secreta_segura
 
 ---
 
-## 🧪 Pruebas Automatizadas E2E
+## Pruebas Automatizadas E2E
 
-La suite de pruebas automatizadas con Playwright cubre 10 pruebas integrales de extremo a extremo:
+La suite de pruebas automatizadas con Playwright cubre 12 pruebas integrales de extremo a extremo:
 
 ```bash
 # Ejecutar toda la suite de pruebas
@@ -264,13 +290,15 @@ npm test
 ```
 
 ### Casos de Prueba Verificados:
-1. **Autenticación Limpia:** Carga de modal sin presets, con alternador de visibilidad (`Eye`/`EyeOff`).
+1. **Autenticacion Limpia:** Carga de modal sin presets, con alternador de visibilidad.
 2. **Cambio Forzado de Clave:** Intercepción en primer inicio de sesión y actualización obligatoria.
-3. **Admin Dashboard:** Navegación lateral fija (`aside`) con 6 secciones operativas y métricas de cuota.
-4. **Perfil de Usuario:** Actualización de usuario, cambio voluntario de clave y estadísticas de visualización.
+3. **Admin Dashboard:** Navegación lateral fija con 6 secciones operativas y métricas de cuota.
+4. **Perfil de Usuario:** Actualización de usuario, cambio voluntario de clave y estadísticas.
 5. **Command Palette (`Ctrl+K`):** Atajo de teclado, búsqueda difusa y filtros multidimensionales.
-6. **Selector de Temas:** Cambio fluido entre los 5 temas cinemáticos puros sin nombres de marcas externas.
+6. **Selector de Temas:** Cambio fluido entre los 5 temas cinemáticos puros.
 7. **Reproductor VLC 200%:** Ganancia con Web Audio API, barra triangular y duración exacta en MKV.
-8. **Ficha Técnica 3D:** Animación de giro para consulta de metadatos de medios.
-9. **Cierre de Sesión:** Retorno suave a la Landing Page con Toast de confirmación de salida.
-10. **Responsividad Móvil y Scroll Restoration:** Barra de navegación inferior de 4 botones, búsqueda superior, drawer deslizante y restauración de posición de scroll en cero.
+8. **Ficha Tecnica 3D:** Animación de giro para consulta de metadatos de medios.
+9. **Cierre de Sesion:** Retorno suave a la Landing Page con Toast de confirmación de salida.
+10. **Responsividad Movil y Scroll Restoration:** Barra de navegación inferior de 4 botones y restauración de posición de scroll en cero.
+11. **Proteccion de Cuotas por Rol:** Los usuarios con rol `viewer` no tienen acceso ni visibilidad al Dashboard de Cuotas ni al módulo de limpieza.
+12. **Fallback UI Offline Global:** Al simular la desconexión del backend local, el frontend en Vercel desmonta el contenido y renderiza la pantalla de reserva a 100vh con botón de reintento en caliente.

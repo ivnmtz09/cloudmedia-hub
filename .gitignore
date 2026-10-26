@@ -12,6 +12,7 @@ playwright/.cache/
 debug_page.png
 *.png
 !docs/screenshots/*.png
+!frontend/public/screenshots/*.png
 
 # Build artifacts
 dist/
