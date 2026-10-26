@@ -15,7 +15,7 @@ export default function LandingPage({ onOpenLogin }) {
     <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-colors duration-300">
       {/* ================= HEADER / BARRA DE NAVEGACIÓN ================= */}
       <header className="sticky top-0 z-40 w-full bg-theme-surface border-b border-theme-border shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <CloudMediaLogo size={28} variant="logotype" />
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-mono">

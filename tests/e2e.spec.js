@@ -285,4 +285,50 @@ test.describe('CloudMedia Hub - E2E Suite (Clean Auth, Profile, Admin Dashboard 
     await expect(page.locator('button:has-text("Iniciar Sesión")').first()).toBeVisible();
     await expect(page.locator('text=Autenticación CloudMedia')).not.toBeVisible();
   });
+
+  test('10. Full-width header with centered tabs on desktop, and responsive 5-item bottom bar with burger menu drawer on mobile', async ({ page }) => {
+    await loginUser(page, 'ivnmtz09');
+
+    // Desktop: Check full-width header and tabs
+    const desktopTabs = page.locator('nav[aria-label="Secciones principales"]');
+    await expect(desktopTabs).toBeVisible();
+    await expect(page.locator('#tab-streaming')).toBeVisible();
+    await expect(page.locator('#tab-explorer')).toBeVisible();
+    await expect(page.locator('#tab-monitoring')).toBeVisible();
+    await expect(page.locator('#tab-users')).toBeVisible();
+
+    // Switch to mobile viewport
+    await page.setViewportSize({ width: 375, height: 667 });
+
+    // Verify desktop tabs are hidden and 5-item bottom nav is visible
+    await expect(desktopTabs).not.toBeVisible();
+    const bottomNav = page.locator('nav[aria-label="Barra de navegación inferior móvil"]');
+    await expect(bottomNav).toBeVisible();
+
+    // Verify all 5 bottom items
+    await expect(page.locator('#mobile-tab-streaming')).toBeVisible();
+    await expect(page.locator('#mobile-tab-explorer')).toBeVisible();
+    await expect(page.locator('#mobile-tab-search')).toBeVisible();
+    await expect(page.locator('#mobile-tab-monitoring')).toBeVisible();
+    await expect(page.locator('#mobile-tab-users')).toBeVisible();
+
+    // Test burger menu button and drawer
+    const burgerBtn = page.locator('button[aria-label*="menú de navegación"]');
+    await expect(burgerBtn).toBeVisible();
+    await burgerBtn.click();
+
+    // Drawer must open with user profile and cloud quota
+    await expect(page.locator('aside[aria-label="Menú principal de navegación"]')).toBeVisible();
+    await expect(page.locator('aside >> text=ivnmtz09')).toBeVisible();
+    await expect(page.locator('aside >> text=Almacenamiento Nube')).toBeVisible();
+    await expect(page.locator('aside >> button:has-text("Personalizar Tema")')).toBeVisible();
+
+    // Close drawer
+    await page.locator('button[aria-label="Cerrar panel móvil"]').click();
+    await expect(page.locator('aside[aria-label="Menú principal de navegación"]')).not.toBeVisible();
+
+    // Test mobile tab navigation
+    await page.locator('#mobile-tab-explorer').click();
+    await expect(page.getByRole('button', { name: 'Raíz (PC_Storage)' })).toBeVisible({ timeout: 5000 });
+  });
 });

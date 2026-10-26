@@ -158,7 +158,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-12">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-24 lg:pb-12">
         {activeTab === 'streaming' && (
           <StreamingView
             onGoToExplorer={() => setActiveTab('explorer')}
@@ -191,7 +191,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-theme-border bg-theme-surface py-6 text-center text-xs text-theme-muted">
+      <footer className="border-t border-theme-border bg-theme-surface py-6 text-center text-xs text-theme-muted mb-16 lg:mb-0">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
