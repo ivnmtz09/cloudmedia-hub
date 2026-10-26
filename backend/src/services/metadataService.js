@@ -82,7 +82,9 @@ export function slugify(text) {
 export async function readMetadata() {
   try {
     const raw = await fs.readFile(METADATA_FILE, 'utf-8');
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return {};
+    return parsed || {};
   } catch {
     return {};
   }
@@ -167,9 +169,26 @@ export async function fetchOnlineMetadata(cleanTitle, category = 'Peliculas') {
     console.warn('iTunes API error:', err.message);
   }
 
-  // 3. Fallback: Wikipedia ES REST API
+  // 3. Fallback: Wikipedia ES REST API with OpenSearch
   try {
-    const wikiUrl = `https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(cleanTitle)}`;
+    let resolvedTitle = cleanTitle;
+    const searchUrl = `https://es.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(cleanTitle)}&limit=1&format=json`;
+    const searchRes = await fetch(searchUrl, { headers: { 'User-Agent': 'CloudMediaHub/2.0' } });
+    if (searchRes.ok) {
+      const searchJson = await searchRes.json();
+      if (searchJson[1] && searchJson[1].length > 0) {
+        resolvedTitle = searchJson[1][0];
+      } else if (cleanTitle.toLowerCase().includes('liga de la justicia')) {
+        const altTerm = cleanTitle.replace(/liga de la justicia/gi, 'Justice League');
+        const altRes = await fetch(`https://es.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(altTerm)}&limit=1&format=json`, { headers: { 'User-Agent': 'CloudMediaHub/2.0' } });
+        if (altRes.ok) {
+          const altJson = await altRes.json();
+          if (altJson[1] && altJson[1].length > 0) resolvedTitle = altJson[1][0];
+        }
+      }
+    }
+
+    const wikiUrl = `https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(resolvedTitle.replace(/\s+/g, '_'))}`;
     const res = await fetch(wikiUrl, { headers: { 'User-Agent': 'CloudMediaHub/2.0' } });
     if (res.ok) {
       const json = await res.json();

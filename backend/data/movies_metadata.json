@@ -1,1 +1,80 @@
-[]
+{
+  "Peliculas/Batman La máscara del fantasma 1080p DUAL 1.20 GB.mkv": {
+    "path": "Peliculas/Batman La máscara del fantasma 1080p DUAL 1.20 GB.mkv",
+    "filename": "Batman La máscara del fantasma 1080p DUAL 1.20 GB.mkv",
+    "cleanTitle": "Batman La máscara del fantasma",
+    "badges": [
+      "1080P",
+      "DUAL",
+      "1.20 GB",
+      "MKV"
+    ],
+    "season": null,
+    "episode": null,
+    "title": "Batman: la máscara del fantasma",
+    "synopsis": "Batman: La máscara del fantasma es una película de animación estadounidense de 1993 protagonizada por Batman; superhéroe de la editorial DC Comics, inspirada en la serie de televisión Batman: la serie animada. Al igual que en la serie, la cinta es protagonizada por Kevin Conroy como la voz de Batman. El guion de la película fue escrito por Paul Dini, Michael Reaves y Martin Pasko; producida por Alan Burnett y dirigida por Bruce Timm y Eric Radomsky y distribuida por Warner Bros. Originalmente fue pensada para ser distribuida directamente para vídeo, pero después de ver el producto final, la Warner decidió estrenarla en los cines norteamericanos, posponiendo su lanzamiento en vídeo. La máscara del fantasma recibió muchos elogios de la crítica por su animación, diálogos y actuación; pero fue un rotundo fracaso en taquilla debido a su corto tiempo de proyección en los cinemas. En el extranjero, no llegó a estrenarse en los cines, distribuyéndose en formato VHS.",
+    "posterUrl": "/api/metadata/poster?slug=batman-la-mascara-del-fantasma",
+    "year": null,
+    "score": null,
+    "category": "Peliculas",
+    "updatedAt": "2026-10-26T00:20:26.100Z"
+  },
+  "Peliculas/Hijo de Batman 720p LAT 707.03 MB.mp4": {
+    "path": "Peliculas/Hijo de Batman 720p LAT 707.03 MB.mp4",
+    "filename": "Hijo de Batman 720p LAT 707.03 MB.mp4",
+    "cleanTitle": "Hijo de Batman",
+    "badges": [
+      "720P",
+      "LAT",
+      "707.03 MB",
+      "MP4"
+    ],
+    "season": null,
+    "episode": null,
+    "title": "Son of Batman",
+    "synopsis": "Son of Batman es una película de animación de 2014 basada en los personajes de DC Cómics, Batman y Robin. Esta es la tercera película del Universo de Películas Animadas de DC, y está basada en el arco argumental del 2006, Batman & Son.",
+    "posterUrl": null,
+    "year": null,
+    "score": null,
+    "category": "Peliculas",
+    "updatedAt": "2026-10-26T00:20:26.766Z"
+  },
+  "Peliculas/Justice League The Flashpoint Paradox HD 698.20 MB.mkv": {
+    "path": "Peliculas/Justice League The Flashpoint Paradox HD 698.20 MB.mkv",
+    "filename": "Justice League The Flashpoint Paradox HD 698.20 MB.mkv",
+    "cleanTitle": "Justice League The Flashpoint Paradox",
+    "badges": [
+      "698.20 MB",
+      "MKV"
+    ],
+    "season": null,
+    "episode": null,
+    "title": "Justice League: The Flashpoint Paradox",
+    "synopsis": "Justice League: The Flashpoint Paradox es una película estadounidense de animación para adultos y de superhéroes de 2013, dirigida por Jay Oliva y escrita por Jim Krieg. protagonizada por Flash. Es una adaptación de la serie crossover de cómics de 2011, Flashpoint, de Geoff Johns y Andy Kubert. La película está protagonizada por Justin Chambers como Barry Allen / Flash, C. Thomas Howell como Eobard Thawne / Flash Reverso, Michael B. Jordan como Víctor Stone / Cyborg, Kevin McKidd como Thomas Wayne / Batman y Cary Elwes como Orin / Arthur Curry / Aquaman. La película también cuenta con la participación de actores que repiten sus papeles de otras series animadas de DC, incluidos Kevin Conroy como Bruce Wayne / Batman, Nathan Fillion como Hal Jordan / Linterna Verde, Ron Perlman como Slade Wilson / Deathstroke, Dana Delany como Lois Lane, Vanessa Marshall como la Princesa Diana / Mujer Maravilla y Dee Bradley Baker como Etrigan el Demonio.",
+    "posterUrl": null,
+    "year": null,
+    "score": null,
+    "category": "Peliculas",
+    "updatedAt": "2026-10-26T00:20:27.226Z"
+  },
+  "Peliculas/Liga de la Justicia Guerra 1080p DUAL 2.50 GB.mkv": {
+    "path": "Peliculas/Liga de la Justicia Guerra 1080p DUAL 2.50 GB.mkv",
+    "filename": "Liga de la Justicia Guerra 1080p DUAL 2.50 GB.mkv",
+    "cleanTitle": "Liga de la Justicia Guerra",
+    "badges": [
+      "1080P",
+      "DUAL",
+      "2.50 GB",
+      "MKV"
+    ],
+    "season": null,
+    "episode": null,
+    "title": "Liga de la Justicia Guerra",
+    "synopsis": "",
+    "posterUrl": null,
+    "year": null,
+    "score": null,
+    "category": "Peliculas",
+    "updatedAt": "2026-10-26T00:20:28.105Z"
+  }
+}
