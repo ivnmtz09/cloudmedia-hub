@@ -30,14 +30,10 @@ export function AuthProvider({ children }) {
           }
         } else {
           setToken(null);
-          setIsLoginModalOpen(true);
         }
-      } else {
-        setIsLoginModalOpen(true);
       }
     } catch {
       setToken(null);
-      setIsLoginModalOpen(true);
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +77,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     setToken(null);
     setIsForcePasswordModalOpen(false);
-    setIsLoginModalOpen(true);
+    setIsLoginModalOpen(false);
   };
 
   const hasRole = (role) => {

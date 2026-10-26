@@ -3,6 +3,17 @@ import { THEMES, DEFAULT_THEME } from '../styles/themes';
 
 const ThemeContext = createContext(null);
 
+function hexToRgb(hex) {
+  if (!hex) return '26, 26, 26';
+  const clean = hex.replace('#', '');
+  const bigint = parseInt(clean, 16);
+  if (isNaN(bigint)) return '26, 26, 26';
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `${r}, ${g}, ${b}`;
+}
+
 function updateFaviconColor(accentColor) {
   if (typeof document === 'undefined') return;
   const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none"><defs><linearGradient id="cloudGrad" x1="4" y1="6" x2="28" y2="28" gradientUnits="userSpaceOnUse"><stop stop-color="${accentColor}"/><stop offset="1" stop-color="${accentColor}"/></linearGradient><linearGradient id="playGrad" x1="12" y1="11" x2="20" y2="21" gradientUnits="userSpaceOnUse"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#f1f5f9"/></linearGradient></defs><path d="M9 22C6.23858 22 4 19.7614 4 17C4 14.4716 5.87412 12.3807 8.31846 12.0468C8.94827 8.58882 11.9613 6 15.6 6C19.7974 6 23.2 9.4026 23.2 13.6C25.8509 13.805 28 16.0354 28 18.75C28 21.6495 25.6495 24 22.75 24L9 24C7.89543 24 7 23.1046 7 22" stroke="url(#cloudGrad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 11.5L20.5 15.5L13.5 19.5V11.5Z" fill="url(#playGrad)" stroke="${accentColor}" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
@@ -36,6 +47,7 @@ export function ThemeProvider({ children }) {
     const root = document.documentElement;
     const colors = currentTheme.colors;
 
+    // Direct hex variables
     root.style.setProperty('--color-bg', colors.bg);
     root.style.setProperty('--color-surface', colors.surface);
     root.style.setProperty('--color-card', colors.card);
@@ -45,8 +57,15 @@ export function ThemeProvider({ children }) {
     root.style.setProperty('--color-accent-glow', colors.accentGlow);
     root.style.setProperty('--color-text', colors.text);
     root.style.setProperty('--color-text-muted', colors.textMuted);
-    root.setAttribute('data-theme', themeId);
 
+    // RGB channel triplets for Tailwind alpha-value support
+    root.style.setProperty('--color-bg-rgb', hexToRgb(colors.bg));
+    root.style.setProperty('--color-surface-rgb', hexToRgb(colors.surface));
+    root.style.setProperty('--color-card-rgb', hexToRgb(colors.card));
+    root.style.setProperty('--color-border-rgb', hexToRgb(colors.border));
+    root.style.setProperty('--color-accent-rgb', hexToRgb(colors.accent));
+
+    root.setAttribute('data-theme', themeId);
     root.classList.remove('theme-light');
     root.classList.add('dark');
 

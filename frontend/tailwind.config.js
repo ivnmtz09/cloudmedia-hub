@@ -8,14 +8,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        'theme-bg': 'var(--color-bg)',
-        'theme-surface': 'var(--color-surface)',
-        'theme-card': 'var(--color-card)',
-        'theme-border': 'var(--color-border)',
-        'theme-accent': 'var(--color-accent)',
-        'theme-accent-hover': 'var(--color-accent-hover)',
-        'theme-text': 'var(--color-text)',
-        'theme-muted': 'var(--color-text-muted)',
+        'theme-bg': 'rgba(var(--color-bg-rgb, 20, 20, 20), <alpha-value>)',
+        'theme-surface': 'rgba(var(--color-surface-rgb, 26, 26, 26), <alpha-value>)',
+        'theme-card': 'rgba(var(--color-card-rgb, 31, 31, 31), <alpha-value>)',
+        'theme-border': 'rgba(var(--color-border-rgb, 45, 45, 45), <alpha-value>)',
+        'theme-accent': 'rgba(var(--color-accent-rgb, 229, 9, 20), <alpha-value>)',
+        'theme-accent-hover': 'var(--color-accent-hover, #f40612)',
+        'theme-text': 'var(--color-text, #ffffff)',
+        'theme-muted': 'var(--color-text-muted, #a3a3a3)',
         brand: {
           50: '#fdf2f2',
           100: '#fde8e8',

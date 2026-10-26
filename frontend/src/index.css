@@ -6,6 +6,19 @@
 @layer base {
   :root {
     color-scheme: dark;
+    --color-bg: #141414;
+    --color-surface: #1a1a1a;
+    --color-card: #1f1f1f;
+    --color-border: #2d2d2d;
+    --color-accent: #E50914;
+    --color-accent-hover: #f40612;
+    --color-text: #ffffff;
+    --color-text-muted: #a3a3a3;
+    --color-bg-rgb: 20, 20, 20;
+    --color-surface-rgb: 26, 26, 26;
+    --color-card-rgb: 31, 31, 31;
+    --color-border-rgb: 45, 45, 45;
+    --color-accent-rgb: 229, 9, 20;
   }
   
   body {
@@ -34,7 +47,7 @@
   background: var(--color-text-muted, #737373);
 }
 
-/* Solid surfaces - Zero Glassmorphism */
+/* Solid surfaces - High Definition & Zero Transparency */
 .glass-panel {
   background-color: var(--color-surface, #1a1a1a);
   border: 1px solid var(--color-border, #2d2d2d);
@@ -49,6 +62,43 @@
   background-color: var(--color-card, #1f1f1f);
   border: 1px solid var(--color-border, #2d2d2d);
   box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Fallback solid classes to guarantee 100% opacity */
+.bg-theme-bg {
+  background-color: var(--color-bg, #141414);
+}
+
+.bg-theme-surface {
+  background-color: var(--color-surface, #1a1a1a);
+}
+
+.bg-theme-card {
+  background-color: var(--color-card, #1f1f1f);
+}
+
+.border-theme-border {
+  border-color: var(--color-border, #2d2d2d);
+}
+
+.text-theme-text {
+  color: var(--color-text, #ffffff);
+}
+
+.text-theme-muted {
+  color: var(--color-text-muted, #a3a3a3);
+}
+
+.text-theme-accent {
+  color: var(--color-accent, #E50914);
+}
+
+.border-theme-accent {
+  border-color: var(--color-accent, #E50914);
+}
+
+.bg-theme-accent {
+  background-color: var(--color-accent, #E50914);
 }
 
 /* Glow and transitions */

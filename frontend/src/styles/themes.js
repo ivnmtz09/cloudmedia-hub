@@ -2,7 +2,6 @@ export const THEMES = {
   'redflix': {
     id: 'redflix',
     name: 'Redflix',
-    platform: 'Netflix',
     description: 'Negro carbón absoluto con rojo emblemático',
     colors: {
       bg: '#141414',
@@ -22,7 +21,6 @@ export const THEMES = {
   'magic-plus': {
     id: 'magic-plus',
     name: 'Magic Plus',
-    platform: 'Disney+',
     description: 'Azul medianoche profundo y azul eléctrico / cian',
     colors: {
       bg: '#0d1b2a',
@@ -42,7 +40,6 @@ export const THEMES = {
   'anime-studio': {
     id: 'anime-studio',
     name: 'Anime Studio',
-    platform: 'Crunchyroll',
     description: 'Gris grafito oscuro con acento naranja vibrante',
     colors: {
       bg: '#0f0f0f',
@@ -62,7 +59,6 @@ export const THEMES = {
   'max-cinema': {
     id: 'max-cinema',
     name: 'Max Cinema',
-    platform: 'Max / HBO',
     description: 'Azul medianoche oscuro con acento púrpura neón',
     colors: {
       bg: '#080b11',
@@ -82,7 +78,6 @@ export const THEMES = {
   'prime-vision': {
     id: 'prime-vision',
     name: 'Prime Vision',
-    platform: 'Prime Video',
     description: 'Azul carbón institucional y cian corporativo',
     colors: {
       bg: '#0f172a',

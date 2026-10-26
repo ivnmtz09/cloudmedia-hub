@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from './components/common/Navbar';
 import Toast from './components/common/Toast';
 import SplashScreen from './components/common/SplashScreen';
+import LandingPage from './components/landing/LandingPage';
 import StreamingView from './components/streaming/StreamingView';
 import CloudExplorer from './components/explorer/CloudExplorer';
 import MonitoringView from './components/monitoring/MonitoringView';
@@ -114,6 +115,31 @@ export default function App() {
       setIsRefreshingStats(false);
     }
   };
+
+  // If user is not authenticated, show the public Landing Page
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-colors duration-300">
+        <SplashScreen />
+        <LandingPage onOpenLogin={() => setIsLoginModalOpen(true)} />
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+        />
+        <ForcePasswordChangeModal
+          isOpen={isForcePasswordModalOpen}
+          onPasswordChanged={(updatedUser) => {
+            addToast({
+              type: 'success',
+              title: 'Contraseña Actualizada',
+              message: `Bienvenido a CloudMedia Hub, ${updatedUser?.username || 'usuario'}`
+            });
+          }}
+        />
+        <Toast toasts={toasts} onDismiss={dismissToast} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-colors duration-300">

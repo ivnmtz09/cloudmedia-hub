@@ -2,6 +2,15 @@ import { test, expect } from '@playwright/test';
 
 async function loginUser(page, username, primaryPass = '1234567890', fallbackPass = '322-520iM.') {
   const userInput = page.locator('input[placeholder="Nombre de usuario"]');
+  const isInputVisible = await userInput.isVisible().catch(() => false);
+  if (!isInputVisible) {
+    const loginCta = page.locator('button:has-text("Iniciar Sesión")').first();
+    const hasLoginCta = await loginCta.isVisible({ timeout: 2500 }).catch(() => false);
+    if (hasLoginCta) {
+      await loginCta.click();
+    }
+  }
+
   await expect(userInput).toBeVisible({ timeout: 5000 });
   await userInput.fill(username);
   const passInput = page.locator('input[placeholder="••••••••"]');
@@ -35,8 +44,14 @@ test.describe('CloudMedia Hub - E2E Suite (Clean Auth, Profile, Admin Dashboard 
     await page.reload();
   });
 
-  test('1. Loads clean authentication modal with show/hide password toggle and no role presets', async ({ page }) => {
+  test('1. Loads landing page and opens clean authentication modal with show/hide password toggle and no role presets', async ({ page }) => {
     await expect(page).toHaveTitle(/CloudMedia Hub/i);
+
+    // Verify Landing Page hero is visible
+    await expect(page.locator('text=Tu Catálogo Multimedia en la Nube')).toBeVisible({ timeout: 5000 });
+    const loginBtn = page.locator('button:has-text("Iniciar Sesión")').first();
+    await expect(loginBtn).toBeVisible();
+    await loginBtn.click();
 
     const authModal = page.locator('text=Autenticación CloudMedia');
     await expect(authModal).toBeVisible({ timeout: 5000 });
@@ -65,7 +80,14 @@ test.describe('CloudMedia Hub - E2E Suite (Clean Auth, Profile, Admin Dashboard 
   });
 
   test('2. First login triggers mandatory password change modal, updates password and unlocks system', async ({ page }) => {
-    await page.locator('input[placeholder="Nombre de usuario"]').fill('ivnmtz09');
+    const loginBtn = page.locator('button:has-text("Iniciar Sesión")').first();
+    if (await loginBtn.isVisible().catch(() => false)) {
+      await loginBtn.click();
+    }
+
+    const userInput = page.locator('input[placeholder="Nombre de usuario"]');
+    await expect(userInput).toBeVisible({ timeout: 5000 });
+    await userInput.fill('ivnmtz09');
     const passInput = page.locator('input[placeholder="••••••••"]');
     await passInput.fill('1234567890');
     await page.locator('button[type="submit"]:has-text("Iniciar Sesión")').click();
@@ -177,7 +199,7 @@ test.describe('CloudMedia Hub - E2E Suite (Clean Auth, Profile, Admin Dashboard 
     await expect(searchInput).not.toBeVisible();
   });
 
-  test('6. Appearance & Theme Panel toggles themes and grid density', async ({ page }) => {
+  test('6. Appearance & Theme Panel toggles themes and grid density without platform brand names', async ({ page }) => {
     await loginUser(page, 'ivnmtz09');
 
     const themeBtn = page.locator('button[aria-label="Personalizar tema"]');
@@ -189,6 +211,11 @@ test.describe('CloudMedia Hub - E2E Suite (Clean Auth, Profile, Admin Dashboard 
     await expect(page.locator('text=Anime Studio')).toBeVisible();
     await expect(page.locator('text=Max Cinema')).toBeVisible();
     await expect(page.locator('text=Prime Vision')).toBeVisible();
+
+    // Verify platform names are NOT rendered in the theme selector
+    await expect(page.locator('text=Netflix')).not.toBeVisible();
+    await expect(page.locator('text=Disney+')).not.toBeVisible();
+    await expect(page.locator('text=Crunchyroll')).not.toBeVisible();
 
     await page.locator('button:has-text("Anime Studio")').click();
 
@@ -238,5 +265,24 @@ test.describe('CloudMedia Hub - E2E Suite (Clean Auth, Profile, Admin Dashboard 
 
     const flipBackBtn = page.locator('button[aria-label="Volver al frente"]').first();
     await flipBackBtn.click();
+  });
+
+  test('9. User can log out and is returned to the Landing Page home', async ({ page }) => {
+    await loginUser(page, 'ivnmtz09');
+
+    // UserBadge dropdown
+    const userBadgeBtn = page.locator('button').filter({ hasText: 'ivnmtz09' }).first();
+    await expect(userBadgeBtn).toBeVisible({ timeout: 5000 });
+    await userBadgeBtn.click();
+
+    // Click "Cerrar Sesión"
+    const logoutBtn = page.locator('button:has-text("Cerrar Sesión")');
+    await expect(logoutBtn).toBeVisible();
+    await logoutBtn.click();
+
+    // Must be returned cleanly to Landing Page without open modal
+    await expect(page.locator('text=Tu Catálogo Multimedia en la Nube')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('button:has-text("Iniciar Sesión")').first()).toBeVisible();
+    await expect(page.locator('text=Autenticación CloudMedia')).not.toBeVisible();
   });
 });

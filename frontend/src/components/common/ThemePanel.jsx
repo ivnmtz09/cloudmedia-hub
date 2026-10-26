@@ -30,7 +30,7 @@ export function ThemePanel({ isOpen, onClose }) {
                 Apariencia y Visualización
               </h2>
               <p className="text-xs text-theme-muted">
-                Paletas sólidas inspiradas en plataformas de streaming
+                Paletas sólidas y superficies de alta definición
               </p>
             </div>
           </div>
@@ -74,14 +74,7 @@ export function ThemePanel({ isOpen, onClose }) {
                       />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-theme-text">{t.name}</span>
-                        {t.platform && (
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-theme-border text-theme-muted">
-                            {t.platform}
-                          </span>
-                        )}
-                      </div>
+                      <div className="text-sm font-semibold text-theme-text">{t.name}</div>
                       <div className="text-xs text-theme-muted">{t.description}</div>
                     </div>
                   </div>
