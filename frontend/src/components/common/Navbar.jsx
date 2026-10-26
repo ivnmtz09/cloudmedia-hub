@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Film, HardDrive, FolderOpen, RefreshCw, Palette, Users, Search } from 'lucide-react';
+import { Film, HardDrive, FolderOpen, RefreshCw, Palette, Users, Search, Shield } from 'lucide-react';
 import { CloudMediaLogo } from './CloudMediaLogo';
 import { ThemePanel } from './ThemePanel';
 import { UserBadge } from '../auth/UserBadge';
@@ -12,7 +12,8 @@ export default function Navbar({
   stats,
   isRefreshingStats,
   onRefreshStats,
-  onOpenSearch
+  onOpenSearch,
+  addToast
 }) {
   const [isThemePanelOpen, setIsThemePanelOpen] = useState(false);
   const { hasRole } = useAuth();
@@ -29,7 +30,7 @@ export default function Navbar({
   ];
 
   if (hasRole('admin')) {
-    tabs.push({ id: 'users', label: 'Usuarios', Icon: Users });
+    tabs.push({ id: 'users', label: 'Administración', Icon: Shield });
   }
 
   // Quota color semantics
@@ -171,7 +172,7 @@ export default function Navbar({
             </button>
 
             {/* User Badge / Dropdown */}
-            <UserBadge />
+            <UserBadge addToast={addToast} />
           </div>
         </div>
 

@@ -2,19 +2,85 @@
   {
     "id": "1",
     "username": "ivnmtz09",
-    "password": "$2b$10$9o4a616dCBVleY.6HLxsG.D5yhL/ZicrVooknqZPTFfIa.jMXIMdK",
-    "role": "admin"
+    "password": "$2b$10$DM.Q6xKXw748zEqNovl6Q.1zrd.epMHFXsmJLMBMtZnVOwdb0FB7u",
+    "role": "admin",
+    "mustChangePassword": true
   },
   {
     "id": "2",
-    "username": "moder",
-    "password": "$2b$10$FgVEhJHUi7lalImBOWEgcO2wr2w6T15tODzzHSsF9/0yfMYA02DTi",
-    "role": "moderator"
+    "username": "baxter",
+    "password": "$2b$10$DM.Q6xKXw748zEqNovl6Q.1zrd.epMHFXsmJLMBMtZnVOwdb0FB7u",
+    "role": "moderator",
+    "mustChangePassword": true
   },
   {
     "id": "3",
-    "username": "usuario",
-    "password": "$2b$10$yirscuxcxHbx1gVbgB0mse1KLptiJ7Sf4w6cedL9rv2nUta5TQpMC",
-    "role": "viewer"
+    "username": "bimo",
+    "password": "$2b$10$DM.Q6xKXw748zEqNovl6Q.1zrd.epMHFXsmJLMBMtZnVOwdb0FB7u",
+    "role": "moderator",
+    "mustChangePassword": true
+  },
+  {
+    "id": "4",
+    "username": "juank",
+    "password": "$2b$10$DM.Q6xKXw748zEqNovl6Q.1zrd.epMHFXsmJLMBMtZnVOwdb0FB7u",
+    "role": "moderator",
+    "mustChangePassword": true
+  },
+  {
+    "id": "5",
+    "username": "bozame",
+    "password": "$2b$10$DM.Q6xKXw748zEqNovl6Q.1zrd.epMHFXsmJLMBMtZnVOwdb0FB7u",
+    "role": "viewer",
+    "mustChangePassword": true
+  },
+  {
+    "id": "6",
+    "username": "saudiki",
+    "password": "$2b$10$DM.Q6xKXw748zEqNovl6Q.1zrd.epMHFXsmJLMBMtZnVOwdb0FB7u",
+    "role": "viewer",
+    "mustChangePassword": true
+  },
+  {
+    "id": "7",
+    "username": "manu",
+    "password": "$2b$10$DM.Q6xKXw748zEqNovl6Q.1zrd.epMHFXsmJLMBMtZnVOwdb0FB7u",
+    "role": "viewer",
+    "mustChangePassword": true
+  },
+  {
+    "id": "8",
+    "username": "mawi",
+    "password": "$2b$10$DM.Q6xKXw748zEqNovl6Q.1zrd.epMHFXsmJLMBMtZnVOwdb0FB7u",
+    "role": "viewer",
+    "mustChangePassword": true
+  },
+  {
+    "id": "9",
+    "username": "juliao",
+    "password": "$2b$10$DM.Q6xKXw748zEqNovl6Q.1zrd.epMHFXsmJLMBMtZnVOwdb0FB7u",
+    "role": "viewer",
+    "mustChangePassword": true
+  },
+  {
+    "id": "10",
+    "username": "carlos",
+    "password": "$2b$10$DM.Q6xKXw748zEqNovl6Q.1zrd.epMHFXsmJLMBMtZnVOwdb0FB7u",
+    "role": "viewer",
+    "mustChangePassword": true
+  },
+  {
+    "id": "11",
+    "username": "karlos",
+    "password": "$2b$10$DM.Q6xKXw748zEqNovl6Q.1zrd.epMHFXsmJLMBMtZnVOwdb0FB7u",
+    "role": "viewer",
+    "mustChangePassword": true
+  },
+  {
+    "id": "12",
+    "username": "hasmid",
+    "password": "$2b$10$DM.Q6xKXw748zEqNovl6Q.1zrd.epMHFXsmJLMBMtZnVOwdb0FB7u",
+    "role": "viewer",
+    "mustChangePassword": true
   }
 ]

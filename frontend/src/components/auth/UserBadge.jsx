@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { User, LogOut, RefreshCw, Shield, ChevronDown } from 'lucide-react';
+import { User, LogOut, RefreshCw, Shield, ChevronDown, UserCheck } from 'lucide-react';
+import ProfileModal from '../profile/ProfileModal';
 
-export function UserBadge() {
+export function UserBadge({ addToast }) {
   const { user, logout, setIsLoginModalOpen } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -80,6 +82,17 @@ export function UserBadge() {
           <button
             onClick={() => {
               setDropdownOpen(false);
+              setIsProfileOpen(true);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-xs rounded-lg text-theme-text hover:bg-white/10 transition-colors text-left"
+          >
+            <User className="w-3.5 h-3.5 text-theme-accent" />
+            <span>Mi Perfil</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setDropdownOpen(false);
               setIsLoginModalOpen(true);
             }}
             className="w-full flex items-center gap-2 px-3 py-2 text-xs rounded-lg text-theme-text hover:bg-white/10 transition-colors text-left"
@@ -100,6 +113,13 @@ export function UserBadge() {
           </button>
         </div>
       )}
+
+      {/* Modal de Perfil */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        addToast={addToast}
+      />
     </div>
   );
 }

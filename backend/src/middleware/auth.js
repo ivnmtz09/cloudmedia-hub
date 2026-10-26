@@ -52,7 +52,7 @@ export function roleGuard(minRole) {
 
 export function generateToken(user) {
   return jwt.sign(
-    { id: user.id, username: user.username, role: user.role },
+    { id: user.id, username: user.username, role: user.role, mustChangePassword: !!user.mustChangePassword },
     JWT_SECRET,
     { expiresIn: '24h' }
   );

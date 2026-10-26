@@ -5,14 +5,22 @@ import StreamingView from './components/streaming/StreamingView';
 import CloudExplorer from './components/explorer/CloudExplorer';
 import MonitoringView from './components/monitoring/MonitoringView';
 import { UsersPanel } from './components/admin/UsersPanel';
+import AdminDashboard from './components/admin/AdminDashboard';
 import { LoginModal } from './components/auth/LoginModal';
+import { ForcePasswordChangeModal } from './components/auth/ForcePasswordChangeModal';
 import { CommandPalette } from './components/search/CommandPalette';
 import VideoPlayerModal from './components/streaming/VideoPlayerModal';
 import { useAuth } from './contexts/AuthContext';
 import { fetchStats, refreshStats, fetchCatalog, fetchMetadata } from './services/api';
 
 export default function App() {
-  const { user, hasRole, isLoginModalOpen, setIsLoginModalOpen } = useAuth();
+  const {
+    user,
+    hasRole,
+    isLoginModalOpen,
+    setIsLoginModalOpen,
+    isForcePasswordModalOpen
+  } = useAuth();
   const [activeTab, setActiveTab] = useState('streaming');
   const [stats, setStats] = useState(null);
   const [isRefreshingStats, setIsRefreshingStats] = useState(false);
@@ -116,6 +124,7 @@ export default function App() {
         isRefreshingStats={isRefreshingStats}
         onRefreshStats={handleRefreshStats}
         onOpenSearch={() => setIsSearchOpen(true)}
+        addToast={addToast}
       />
 
       {/* Main Content Area */}
@@ -143,8 +152,10 @@ export default function App() {
         )}
 
         {activeTab === 'users' && hasRole('admin') && (
-          <UsersPanel
-            onToast={addToast}
+          <AdminDashboard
+            stats={stats}
+            onRefreshStats={handleRefreshStats}
+            addToast={addToast}
           />
         )}
       </main>
@@ -185,6 +196,18 @@ export default function App() {
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
+      />
+
+      {/* Mandatory First Password Change Modal */}
+      <ForcePasswordChangeModal
+        isOpen={isForcePasswordModalOpen}
+        onPasswordChanged={(updatedUser) => {
+          addToast({
+            type: 'success',
+            title: 'Contraseña Actualizada',
+            message: `Bienvenido a CloudMedia Hub, ${updatedUser?.username || 'usuario'}`
+          });
+        }}
       />
 
       {/* Global Toast Notification System */}

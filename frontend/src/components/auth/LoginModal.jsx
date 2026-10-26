@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lock, User, KeyRound, Shield, AlertCircle, ArrowRight } from 'lucide-react';
+import { Lock, User, Shield, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 export function LoginModal({ isOpen, onClose }) {
   const { login } = useAuth();
-  const [username, setUsername] = useState('ivnmtz09');
-  const [password, setPassword] = useState('322-520iM.');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -25,58 +26,24 @@ export function LoginModal({ isOpen, onClose }) {
     }
   };
 
-  const setPreset = (u, p) => {
-    setUsername(u);
-    setPassword(p);
-    setError(null);
-  };
-
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 obscure-backdrop bg-black/80 animate-fade-in"
       role="dialog"
       aria-modal="true"
     >
       <div className="w-full max-w-md rounded-2xl glass p-7 border border-white/10 shadow-2xl animate-scale-in text-theme-text">
         {/* Title */}
         <div className="text-center mb-6">
-          <div className="inline-flex p-3 rounded-2xl bg-theme-accent/15 text-theme-accent mb-3 border border-theme-accent/20">
+          <div className="inline-flex p-3.5 rounded-2xl bg-theme-accent/15 text-theme-accent mb-3 border border-theme-accent/20">
             <Shield className="w-7 h-7" />
           </div>
           <h2 className="text-xl font-bold tracking-tight text-theme-text">
             Autenticación CloudMedia
           </h2>
-          <p className="text-xs text-theme-muted mt-1">
-            Ingresa tus credenciales para acceder a tu catálogo y permisos
+          <p className="text-xs text-theme-muted mt-1 leading-relaxed">
+            Ingresa tus credenciales autorizadas para acceder a la plataforma
           </p>
-        </div>
-
-        {/* Quick Session Presets */}
-        <div className="mb-5">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-theme-muted mb-2 text-center">
-            Acceso Rápido por Rol
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { label: 'Admin', u: 'ivnmtz09', p: '322-520iM.', role: 'admin' },
-              { label: 'Moderador', u: 'moder', p: 'moder2026', role: 'moderator' },
-              { label: 'Usuario', u: 'usuario', p: 'user2026', role: 'viewer' }
-            ].map((preset) => (
-              <button
-                key={preset.role}
-                type="button"
-                onClick={() => setPreset(preset.u, preset.p)}
-                className={`min-h-12 py-2 px-2.5 rounded-xl border text-xs font-medium transition-all text-center focus-ring ${
-                  username === preset.u
-                    ? 'border-theme-accent bg-theme-accent/15 text-theme-accent'
-                    : 'border-theme-border/60 text-theme-muted hover:text-theme-text hover:bg-white/5'
-                }`}
-              >
-                <div>{preset.label}</div>
-                <div className="text-[10px] opacity-75 font-mono">{preset.u}</div>
-              </button>
-            ))}
-          </div>
         </div>
 
         {error && (
@@ -100,6 +67,7 @@ export function LoginModal({ isOpen, onClose }) {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
+                autoComplete="username"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/5 border border-theme-border/60 text-theme-text text-sm focus-ring placeholder-theme-muted min-h-12"
                 placeholder="Nombre de usuario"
               />
@@ -115,19 +83,28 @@ export function LoginModal({ isOpen, onClose }) {
                 <Lock className="w-4 h-4" />
               </div>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/5 border border-theme-border/60 text-theme-text text-sm focus-ring placeholder-theme-muted min-h-12"
+                autoComplete="current-password"
+                className="w-full pl-10 pr-12 py-2.5 rounded-xl bg-white/5 border border-theme-border/60 text-theme-text text-sm focus-ring placeholder-theme-muted min-h-12"
                 placeholder="••••••••"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-theme-muted hover:text-theme-text focus-ring rounded-r-xl"
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !username.trim() || !password}
             className="w-full min-h-12 mt-2 py-3 px-4 rounded-xl bg-theme-accent hover:bg-theme-accent-hover text-white font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-theme-accent/25 focus-ring disabled:opacity-50"
           >
             {loading ? (

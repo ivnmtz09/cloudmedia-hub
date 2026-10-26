@@ -32,7 +32,12 @@ router.use(roleGuard('admin'));
 router.get('/', async (req, res) => {
   try {
     const users = await readUsers();
-    const sanitized = users.map(({ id, username, role }) => ({ id, username, role }));
+    const sanitized = users.map(({ id, username, role, mustChangePassword }) => ({
+      id,
+      username,
+      role,
+      mustChangePassword: !!mustChangePassword
+    }));
     return res.json({ users: sanitized });
   } catch (err) {
     return res.status(500).json({ error: 'Error al listar usuarios' });
@@ -62,7 +67,8 @@ router.post('/', async (req, res) => {
       id: String(Date.now()),
       username: username.trim(),
       password: hashedPassword,
-      role
+      role,
+      mustChangePassword: req.body.mustChangePassword !== undefined ? !!req.body.mustChangePassword : true
     };
 
     users.push(newUser);
@@ -70,7 +76,12 @@ router.post('/', async (req, res) => {
 
     return res.status(201).json({
       message: 'Usuario creado exitosamente',
-      user: { id: newUser.id, username: newUser.username, role: newUser.role }
+      user: {
+        id: newUser.id,
+        username: newUser.username,
+        role: newUser.role,
+        mustChangePassword: newUser.mustChangePassword
+      }
     });
   } catch (err) {
     return res.status(500).json({ error: 'Error al crear usuario' });
@@ -102,12 +113,21 @@ router.put('/:id', async (req, res) => {
       users[userIndex].password = await bcrypt.hash(password, 10);
     }
 
+    if (req.body.mustChangePassword !== undefined) {
+      users[userIndex].mustChangePassword = !!req.body.mustChangePassword;
+    }
+
     await writeUsers(users);
     const updated = users[userIndex];
 
     return res.json({
       message: 'Usuario actualizado exitosamente',
-      user: { id: updated.id, username: updated.username, role: updated.role }
+      user: {
+        id: updated.id,
+        username: updated.username,
+        role: updated.role,
+        mustChangePassword: !!updated.mustChangePassword
+      }
     });
   } catch (err) {
     return res.status(500).json({ error: 'Error al actualizar usuario' });

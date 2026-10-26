@@ -14,6 +14,7 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('cmh_token'));
   const [isLoading, setIsLoading] = useState(true);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isForcePasswordModalOpen, setIsForcePasswordModalOpen] = useState(false);
 
   // Check current session on mount
   const checkSession = useCallback(async () => {
@@ -22,6 +23,11 @@ export function AuthProvider({ children }) {
         const currentUser = await fetchCurrentUser();
         if (currentUser) {
           setUser(currentUser);
+          if (currentUser.mustChangePassword) {
+            setIsForcePasswordModalOpen(true);
+          } else {
+            setIsForcePasswordModalOpen(false);
+          }
         } else {
           setToken(null);
           setIsLoginModalOpen(true);
@@ -48,16 +54,33 @@ export function AuthProvider({ children }) {
       setUser(data.user);
       setToken(data.token);
       setIsLoginModalOpen(false);
+
+      if (data.requirePasswordChange || data.user.mustChangePassword) {
+        setIsForcePasswordModalOpen(true);
+        return { requirePasswordChange: true, user: data.user };
+      }
+
+      setIsForcePasswordModalOpen(false);
       return data.user;
     } finally {
       setIsLoading(false);
     }
   };
 
+  const completePasswordChange = (updatedUser) => {
+    setUser((prev) => ({ ...prev, ...updatedUser, mustChangePassword: false }));
+    setIsForcePasswordModalOpen(false);
+  };
+
+  const updateUserProfile = (updatedUser) => {
+    setUser((prev) => ({ ...prev, ...updatedUser }));
+  };
+
   const logout = async () => {
     await apiLogout();
     setUser(null);
     setToken(null);
+    setIsForcePasswordModalOpen(false);
     setIsLoginModalOpen(true);
   };
 
@@ -84,6 +107,10 @@ export function AuthProvider({ children }) {
         hasMinRole,
         isLoginModalOpen,
         setIsLoginModalOpen,
+        isForcePasswordModalOpen,
+        setIsForcePasswordModalOpen,
+        completePasswordChange,
+        updateUserProfile,
         refreshSession: checkSession
       }}
     >

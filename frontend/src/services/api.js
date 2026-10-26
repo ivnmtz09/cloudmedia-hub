@@ -62,6 +62,56 @@ export async function logout() {
   localStorage.removeItem('cmh_token');
 }
 
+export async function changePassword({ currentPassword, newPassword }) {
+  const res = await fetch(`${API_BASE}/api/auth/change-password`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ currentPassword, newPassword })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Error al cambiar la contraseña');
+  }
+
+  const data = await res.json();
+  if (data.token) {
+    localStorage.setItem('cmh_token', data.token);
+  }
+  return data;
+}
+
+export async function updateProfile({ username }) {
+  const res = await fetch(`${API_BASE}/api/auth/profile`, {
+    method: 'PUT',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ username })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Error al actualizar perfil');
+  }
+
+  const data = await res.json();
+  if (data.token) {
+    localStorage.setItem('cmh_token', data.token);
+  }
+  return data;
+}
+
+export async function fetchProfileStats() {
+  const res = await fetch(`${API_BASE}/api/auth/profile/stats`, {
+    headers: getAuthHeaders()
+  });
+
+  if (!res.ok) {
+    throw new Error('Error al obtener estadísticas del perfil');
+  }
+
+  return await res.json();
+}
+
 // ================= STATS =================
 export async function fetchStats() {
   const res = await fetch(`${API_BASE}/api/stats`, {
@@ -77,6 +127,14 @@ export async function refreshStats() {
     headers: getAuthHeaders()
   });
   if (!res.ok) throw new Error('Error al actualizar la cuota en rclone');
+  return await res.json();
+}
+
+export async function fetchSystemStatus() {
+  const res = await fetch(`${API_BASE}/api/stats/system`, {
+    headers: getAuthHeaders()
+  });
+  if (!res.ok) throw new Error('Error al obtener estado del sistema');
   return await res.json();
 }
 
