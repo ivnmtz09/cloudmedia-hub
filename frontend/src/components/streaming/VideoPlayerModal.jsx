@@ -5,7 +5,7 @@ import {
   RotateCcw, RotateCw, Music2, Subtitles, Check, Loader2, SkipForward,
   Info, Volume as VolumeIcon, Minimize2, Maximize2
 } from 'lucide-react';
-import { fetchMediaInfo, getStreamUrl, saveWatchProgress } from '../../services/api';
+import { fetchMediaInfo, getStreamUrl, getSubtitleUrl, saveWatchProgress } from '../../services/api';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
@@ -67,41 +67,46 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
     }, 1800);
   }, []);
 
-  // 2. Inicializar Web Audio API para volumen hasta 200%
+  // 2. Inicializar Web Audio API solo si se requiere amplificación superior al 100% (hasta 200%)
   const initWebAudio = useCallback(() => {
     if (!videoRef.current) return;
-    if (!audioCtxRef.current) {
-      try {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioContextClass) {
-          const ctx = new AudioContextClass();
-          const gain = ctx.createGain();
-          const source = ctx.createMediaElementSource(videoRef.current);
-          source.connect(gain);
-          gain.connect(ctx.destination);
-
-          gain.gain.value = isMuted ? 0 : volume;
-          audioCtxRef.current = ctx;
-          gainNodeRef.current = gain;
-          sourceNodeRef.current = source;
-        }
-      } catch (err) {
-        console.warn('Web Audio API no pudo inicializarse:', err.message);
+    if (audioCtxRef.current) {
+      if (audioCtxRef.current.state === 'suspended') {
+        audioCtxRef.current.resume().catch(() => {});
       }
+      return;
     }
-    if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
-      audioCtxRef.current.resume().catch(() => {});
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        const ctx = new AudioContextClass();
+        const gain = ctx.createGain();
+        const source = ctx.createMediaElementSource(videoRef.current);
+        source.connect(gain);
+        gain.connect(ctx.destination);
+
+        gain.gain.value = isMuted ? 0 : volume;
+        audioCtxRef.current = ctx;
+        gainNodeRef.current = gain;
+        sourceNodeRef.current = source;
+        if (ctx.state === 'suspended') {
+          ctx.resume().catch(() => {});
+        }
+      }
+    } catch (err) {
+      console.warn('Web Audio API no pudo inicializarse (usando audio nativo):', err.message);
     }
   }, [volume, isMuted]);
 
-  // Actualizar GainNode al cambiar volumen o mute
+  // Actualizar GainNode y volumen nativo
   useEffect(() => {
     const targetGain = isMuted ? 0 : volume;
     if (gainNodeRef.current) {
       gainNodeRef.current.gain.value = targetGain;
     }
     if (videoRef.current) {
-      videoRef.current.volume = Math.min(targetGain, 1.0);
+      videoRef.current.muted = isMuted;
+      videoRef.current.volume = Math.max(0, Math.min(targetGain, 1.0));
     }
   }, [volume, isMuted]);
 
@@ -209,7 +214,9 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
     if (!video) return;
 
     const clampedTarget = Math.max(0, Math.min(targetSeconds, totalDuration || targetSeconds));
-    initWebAudio();
+    if (volume > 1.0) {
+      initWebAudio();
+    }
 
     if (isMkv) {
       setIsBuffering(true);
@@ -247,9 +254,11 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
 
   // 8. Control de Volumen VLC (hasta 200%)
   const changeVolume = (delta) => {
-    initWebAudio();
     let newVol = Math.round((volume + delta) * 100) / 100;
     newVol = Math.max(0, Math.min(newVol, 2.0)); // 0% a 200%
+    if (newVol > 1.0) {
+      initWebAudio();
+    }
 
     setVolume(newVol);
     if (newVol > 0 && isMuted) {
@@ -259,8 +268,10 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
   };
 
   const setVolumeDirect = (val) => {
-    initWebAudio();
     const clamped = Math.max(0, Math.min(val, 2.0));
+    if (clamped > 1.0) {
+      initWebAudio();
+    }
     setVolume(clamped);
     if (clamped > 0 && isMuted) {
       setIsMuted(false);
@@ -269,7 +280,9 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
   };
 
   const toggleMute = () => {
-    initWebAudio();
+    if (volume > 1.0) {
+      initWebAudio();
+    }
     if (isMuted) {
       setIsMuted(false);
       triggerOsd('Volumen', Math.round((previousVolume || 1.0) * 100), 'volume');
@@ -420,7 +433,9 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
   const togglePlay = () => {
     const video = videoRef.current;
     if (!video) return;
-    initWebAudio();
+    if (volume > 1.0) {
+      initWebAudio();
+    }
 
     if (video.paused) {
       video.play().then(() => {
@@ -499,6 +514,30 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
 
   const streamSrc = getStreamUrl(item.path, selectedTrackIndex, isMkv, timeOffset);
   const remainingSeconds = Math.max(0, (totalDuration || 0) - currentTime);
+
+  // Sincronizar estado de las pistas de subtítulos en el elemento de video
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const syncTracks = () => {
+      if (!video.textTracks || video.textTracks.length === 0) return;
+      for (let i = 0; i < video.textTracks.length; i++) {
+        const track = video.textTracks[i];
+        if (selectedSubtitleIndex >= 0) {
+          track.mode = 'showing';
+        } else {
+          track.mode = 'disabled';
+        }
+      }
+    };
+
+    syncTracks();
+    video.addEventListener('loadeddata', syncTracks);
+    return () => {
+      video.removeEventListener('loadeddata', syncTracks);
+    };
+  }, [selectedSubtitleIndex, timeOffset, isMkv]);
 
   // Bloquear scroll de la página cuando no está en mini mode
   useEffect(() => {
@@ -729,6 +768,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
         >
           <video
             ref={videoRef}
+            crossOrigin="anonymous"
             src={streamSrc}
             onTimeUpdate={handleTimeUpdate}
             onWaiting={() => setIsBuffering(true)}
@@ -744,7 +784,18 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
             className="w-full h-full object-contain max-h-screen"
             playsInline
             webkit-playsinline="true"
-          />
+          >
+            {selectedSubtitleIndex >= 0 && (
+              <track
+                key={`sub-${selectedSubtitleIndex}-${isMkv ? timeOffset : 0}`}
+                kind="subtitles"
+                src={getSubtitleUrl(item.path, selectedSubtitleIndex, isMkv ? timeOffset : 0)}
+                srcLang={subtitleTracks[selectedSubtitleIndex]?.language || 'es'}
+                label={subtitleTracks[selectedSubtitleIndex]?.title || 'Subtítulos'}
+                default
+              />
+            )}
+          </video>
 
           {/* Spinner de buffering con el color de acento del tema activo */}
           {isBuffering && (

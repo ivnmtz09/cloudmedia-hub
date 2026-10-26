@@ -14,7 +14,7 @@ import usersRouter from './routes/users.js';
 import metadataRouter from './routes/metadata.js';
 import moviesRouter from './routes/movies.js';
 import watchProgressRouter from './routes/watchProgress.js';
-import { getMediaInfo, handleThumbnail } from './services/streamService.js';
+import { getMediaInfo, handleThumbnail, handleSubtitles } from './services/streamService.js';
 import { listFiles } from './services/filesService.js';
 import { authGuard, roleGuard } from './middleware/auth.js';
 import { syncAll } from './services/metadataService.js';
@@ -60,6 +60,22 @@ app.get('/api/thumbnail', async (req, res) => {
     console.error('Error generating thumbnail:', error);
     if (!res.headersSent) {
       res.status(500).json({ error: error.message || 'Error al generar miniatura' });
+    }
+  }
+});
+
+// Subtitles public (for player)
+app.get(['/api/subtitles', '/api/subtitle'], async (req, res) => {
+  try {
+    const targetPath = req.query.path;
+    if (!targetPath) {
+      return res.status(400).json({ error: 'Ruta de archivo no proporcionada' });
+    }
+    await handleSubtitles(req, res);
+  } catch (error) {
+    console.error('Error generating subtitles:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message || 'Error al generar subtítulos' });
     }
   }
 });

@@ -383,6 +383,21 @@ export function getThumbnailUrl(mediaPath) {
   return `${API_BASE}/api/thumbnail?path=${encodeURIComponent(mediaPath)}`;
 }
 
+export function getSubtitleUrl(mediaPath, subtitleTrackIndex = 0, start = 0) {
+  const token = localStorage.getItem('cmh_token');
+  const params = new URLSearchParams({
+    path: mediaPath,
+    track: subtitleTrackIndex
+  });
+  if (start > 0) {
+    params.set('start', Math.floor(start));
+  }
+  if (token) {
+    params.set('token', token);
+  }
+  return `${API_BASE}/api/stream/subtitles?${params.toString()}`;
+}
+
 export async function fetchMediaInfo(mediaPath) {
   const res = await apiFetch(`${API_BASE}/api/media-info?path=${encodeURIComponent(mediaPath)}`);
   if (!res.ok) {

@@ -1,11 +1,24 @@
 import express from 'express';
 import {
   handleStream,
+  handleSubtitles,
   getMediaInfo,
   handleThumbnail
 } from '../services/streamService.js';
 
 const router = express.Router();
+
+// CORS OPTIONS preflight para rutas de streaming
+router.options('*', (req, res) => {
+  res.writeHead(204, {
+    'Access-Control-Allow-Origin': req.headers.origin || '*',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+    'Access-Control-Allow-Headers': 'Range, Authorization, Content-Type, Accept, Origin',
+    'Access-Control-Expose-Headers': 'Content-Range, Accept-Ranges, Content-Length'
+  });
+  res.end();
+});
 
 // GET /api/stream?path=...&audioTrack=...&remux=...&start=...
 router.get('/', async (req, res) => {
@@ -15,6 +28,18 @@ router.get('/', async (req, res) => {
     console.error('Error in streaming endpoint:', error);
     if (!res.headersSent) {
       res.status(500).json({ error: error.message || 'Error al transmitir video' });
+    }
+  }
+});
+
+// GET /api/stream/subtitles?path=...&track=0&start=0
+router.get(['/subtitles', '/subtitle'], async (req, res) => {
+  try {
+    await handleSubtitles(req, res);
+  } catch (error) {
+    console.error('Error in subtitles endpoint:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message || 'Error al transmitir subtítulos' });
     }
   }
 });

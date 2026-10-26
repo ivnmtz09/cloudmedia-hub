@@ -16,6 +16,17 @@ if (!fsSync.existsSync(CACHE_DIR)) {
   fsSync.mkdirSync(CACHE_DIR, { recursive: true });
 }
 
+export function getCorsHeaders(req) {
+  const origin = req?.headers?.origin || '*';
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+    'Access-Control-Allow-Headers': 'Range, Authorization, Content-Type, Accept, Origin',
+    'Access-Control-Expose-Headers': 'Content-Range, Accept-Ranges, Content-Length'
+  };
+}
+
 export function resolveMediaFilePath(inputPath) {
   if (!inputPath || typeof inputPath !== 'string') {
     throw new Error('Ruta no especificada');
@@ -119,6 +130,14 @@ export async function getMediaInfo(targetPath) {
 }
 
 export async function handleStream(req, res) {
+  const corsHeaders = getCorsHeaders(req);
+
+  // Manejar preflight OPTIONS de CORS de inmediato
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, corsHeaders);
+    return res.end();
+  }
+
   const targetPath = req.query.path;
   const fullPath = resolveMediaFilePath(targetPath);
 
@@ -139,7 +158,7 @@ export async function handleStream(req, res) {
       'Content-Type': mime.lookup(fullPath) || 'video/mp4',
       'Content-Length': stat.size,
       'Accept-Ranges': 'bytes',
-      'Access-Control-Allow-Origin': '*'
+      ...corsHeaders
     });
     return res.end();
   }
@@ -167,7 +186,7 @@ export async function handleStream(req, res) {
       'Transfer-Encoding': 'chunked',
       'Cache-Control': 'no-cache, no-store, must-revalidate',
       'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*'
+      ...corsHeaders
     });
 
     const ffmpegProcess = spawn('ffmpeg', ffmpegArgs, { stdio: ['ignore', 'pipe', 'ignore'] });
@@ -223,7 +242,7 @@ export async function handleStream(req, res) {
       'Accept-Ranges': 'bytes',
       'Content-Length': chunkSize,
       'Content-Type': contentType,
-      'Access-Control-Allow-Origin': '*'
+      ...corsHeaders
     };
 
     res.writeHead(206, headers);
@@ -234,7 +253,7 @@ export async function handleStream(req, res) {
       'Content-Length': fileSize,
       'Accept-Ranges': 'bytes',
       'Content-Type': contentType,
-      'Access-Control-Allow-Origin': '*'
+      ...corsHeaders
     };
 
     res.writeHead(200, headers);
@@ -243,7 +262,97 @@ export async function handleStream(req, res) {
   }
 }
 
+export async function handleSubtitles(req, res) {
+  const corsHeaders = getCorsHeaders(req);
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, corsHeaders);
+    return res.end();
+  }
+
+  const targetPath = req.query.path;
+  if (!targetPath) {
+    return res.status(400).json({ error: 'Ruta de archivo no proporcionada' });
+  }
+
+  const fullPath = resolveMediaFilePath(targetPath);
+  const stat = await fs.stat(fullPath);
+  if (!stat.isFile()) {
+    return res.status(400).json({ error: 'La ruta no corresponde a un archivo' });
+  }
+
+  if (req.method === 'HEAD') {
+    res.writeHead(200, {
+      'Content-Type': 'text/vtt; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
+      ...corsHeaders
+    });
+    return res.end();
+  }
+
+  const trackIdx = parseInt(req.query.track || '0', 10);
+  const startSec = Math.max(0, parseFloat(req.query.start || '0'));
+
+  const ffmpegArgs = [];
+  if (startSec > 0) {
+    ffmpegArgs.push('-ss', startSec.toString());
+  }
+  ffmpegArgs.push(
+    '-i', fullPath,
+    '-map', `0:s:${trackIdx}`,
+    '-f', 'webvtt',
+    'pipe:1'
+  );
+
+  res.writeHead(200, {
+    'Content-Type': 'text/vtt; charset=utf-8',
+    'Cache-Control': 'public, max-age=3600',
+    'Connection': 'keep-alive',
+    ...corsHeaders
+  });
+
+  const ffmpegProcess = spawn('ffmpeg', ffmpegArgs, { stdio: ['ignore', 'pipe', 'ignore'] });
+
+  let killed = false;
+  const cleanupProcess = () => {
+    if (!killed) {
+      killed = true;
+      try {
+        ffmpegProcess.kill('SIGKILL');
+      } catch {
+        // Ignorar
+      }
+    }
+  };
+
+  req.on('close', cleanupProcess);
+  res.on('close', cleanupProcess);
+  res.on('finish', cleanupProcess);
+  ffmpegProcess.stdout.on('error', cleanupProcess);
+
+  ffmpegProcess.stdout.pipe(res);
+
+  ffmpegProcess.on('error', (err) => {
+    cleanupProcess();
+    console.error('Error en proceso ffmpeg subtitles:', err);
+    if (!res.headersSent) {
+      res.writeHead(200, {
+        'Content-Type': 'text/vtt; charset=utf-8',
+        ...corsHeaders
+      });
+      res.end('WEBVTT\n\n');
+    }
+  });
+}
+
 export async function handleThumbnail(req, res) {
+  const corsHeaders = getCorsHeaders(req);
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, corsHeaders);
+    return res.end();
+  }
+
+  res.set(corsHeaders);
   const targetPath = req.query.path;
   const fullPath = resolveMediaFilePath(targetPath);
 

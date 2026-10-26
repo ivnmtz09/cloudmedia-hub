@@ -150,3 +150,18 @@
   max-height: none !important;
 }
 
+/* Subtitles WebVTT styling */
+video::cue {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+  color: #ffffff !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 1.15rem !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 2px #000 !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+  white-space: pre-line !important;
+}
+
+
