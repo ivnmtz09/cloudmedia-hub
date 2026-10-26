@@ -1,5 +1,7 @@
 import React from 'react';
 import { Cloud, HardDrive, RefreshCw, Database, Clock, FileCheck, AlertTriangle } from 'lucide-react';
+import AnimatedCounter from '../common/AnimatedCounter';
+import MorphButton from '../common/MorphButton';
 
 export default function QuotaDashboard({ stats, isRefreshing, onRefresh }) {
   // Drive Stats
@@ -52,14 +54,14 @@ export default function QuotaDashboard({ stats, isRefreshing, onRefresh }) {
           </p>
         </div>
 
-        <button
+        {/* 4. TRANSFORMATION (MORPHING) */}
+        <MorphButton
           onClick={onRefresh}
-          disabled={isRefreshing}
-          className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold shadow-lg shadow-brand-500/20 hover:shadow-glow-red transition-all duration-300 disabled:opacity-50 active:scale-95"
-        >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          <span>{isRefreshing ? 'Sincronizando Cuota...' : 'Actualizar Cuota Ahora'}</span>
-        </button>
+          status={isRefreshing ? 'loading' : 'idle'}
+          idleLabel="Actualizar Cuota Ahora"
+          loadingLabel="Sincronizando..."
+          icon={RefreshCw}
+        />
       </div>
 
       {/* Cards Grid */}
@@ -78,9 +80,10 @@ export default function QuotaDashboard({ stats, isRefreshing, onRefresh }) {
                 </div>
               </div>
 
+              {/* 5. VALUE CHANGE: Conteo interpolado requestAnimationFrame */}
               <div className="text-right">
-                <span className={`text-2xl font-black ${driveTextColor} font-mono`}>
-                  {drivePercent}%
+                <span className={`text-2xl font-black ${driveTextColor} font-mono block`}>
+                  <AnimatedCounter value={drivePercent} suffix="%" decimals={1} />
                 </span>
                 <p className="text-[10px] text-slate-400 uppercase tracking-wider">Usado</p>
               </div>
@@ -129,9 +132,10 @@ export default function QuotaDashboard({ stats, isRefreshing, onRefresh }) {
                 </div>
               </div>
 
+              {/* 5. VALUE CHANGE: Conteo interpolado local */}
               <div className="text-right">
-                <span className="text-2xl font-black text-white font-mono">
-                  {localPercent}%
+                <span className="text-2xl font-black text-white font-mono block">
+                  <AnimatedCounter value={localPercent} suffix="%" decimals={1} />
                 </span>
                 <p className="text-[10px] text-slate-400 uppercase tracking-wider">Usado</p>
               </div>
@@ -154,13 +158,15 @@ export default function QuotaDashboard({ stats, isRefreshing, onRefresh }) {
           </div>
 
           {/* Footer Stats */}
-          <div className="flex items-center justify-between pt-4 border-t border-slate-800/80 text-xs">
-            <span className="text-slate-400">
-              Espacio disponible libre:
-            </span>
-            <span className="text-emerald-400 font-bold font-mono text-sm">
-              {localHumanAvail}
-            </span>
+          <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-800/80 text-xs">
+            <div className="flex items-center gap-2 text-slate-400">
+              <HardDrive className="w-4 h-4 text-slate-500 shrink-0" />
+              <span>Disponible: <strong className="text-emerald-400 font-mono">{localHumanAvail}</strong></span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-400 justify-end">
+              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+              <span>Estado: <strong className="text-white font-mono">{localPercent > 85 ? 'Crítico' : 'Óptimo'}</strong></span>
+            </div>
           </div>
         </div>
       </div>

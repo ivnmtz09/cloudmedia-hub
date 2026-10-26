@@ -4,8 +4,8 @@ import { Lock, User, KeyRound, Shield, AlertCircle, ArrowRight } from 'lucide-re
 
 export function LoginModal({ isOpen, onClose }) {
   const { login } = useAuth();
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin2026');
+  const [username, setUsername] = useState('ivnmtz09');
+  const [password, setPassword] = useState('322-520iM.');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -58,7 +58,7 @@ export function LoginModal({ isOpen, onClose }) {
           </div>
           <div className="grid grid-cols-3 gap-2">
             {[
-              { label: 'Admin', u: 'admin', p: 'admin2026', role: 'admin' },
+              { label: 'Admin', u: 'ivnmtz09', p: '322-520iM.', role: 'admin' },
               { label: 'Moderador', u: 'moder', p: 'moder2026', role: 'moderator' },
               { label: 'Usuario', u: 'usuario', p: 'user2026', role: 'viewer' }
             ].map((preset) => (

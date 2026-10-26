@@ -198,17 +198,21 @@ export function uploadFile(destinationPath, file, onProgress, classification = {
 
 // ================= STREAMING & MEDIA INFO =================
 export function getStreamUrl(mediaPath, audioTrackIndex = null, remux = false, start = 0) {
-  let url = `${API_BASE}/api/stream?path=${encodeURIComponent(mediaPath)}`;
+  const token = localStorage.getItem('cmh_token');
+  const params = new URLSearchParams({ path: mediaPath });
   if (audioTrackIndex !== null && audioTrackIndex !== undefined) {
-    url += `&audioTrack=${audioTrackIndex}`;
+    params.set('audioTrack', audioTrackIndex);
   }
   if (remux) {
-    url += `&remux=true`;
+    params.set('remux', 'true');
   }
   if (start > 0) {
-    url += `&start=${start}`;
+    params.set('start', Math.floor(start));
   }
-  return url;
+  if (token) {
+    params.set('token', token);
+  }
+  return `${API_BASE}/api/stream?${params.toString()}`;
 }
 
 export function getThumbnailUrl(mediaPath) {

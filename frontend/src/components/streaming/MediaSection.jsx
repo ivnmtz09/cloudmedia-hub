@@ -1,9 +1,20 @@
-import React, { useRef } from 'react';
-import { ChevronLeft, ChevronRight, Film, Video, Tv, FolderPlus } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Film, FolderPlus } from 'lucide-react';
 import MediaCard from './MediaCard';
 
-export default function MediaSection({ title, icon: Icon, items = [], onPlay, onDetails, onGoToExplorer }) {
+export default function MediaSection({ title, icon: Icon, items = [], metadata = {}, onPlay, onDetails, onGoToExplorer }) {
   const scrollRef = useRef(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  // 3. PARENTING: Sincroniza el scroll del carrusel con la posición y escala de los indicadores hijos
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      const maxScroll = scrollWidth - clientWidth;
+      const progress = maxScroll > 0 ? scrollLeft / maxScroll : 0;
+      setScrollProgress(progress);
+    }
+  };
 
   const scroll = (direction) => {
     if (scrollRef.current) {
@@ -22,37 +33,52 @@ export default function MediaSection({ title, icon: Icon, items = [], onPlay, on
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
           {Icon && (
-            <div className="p-2 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400">
+            <div className="p-2 rounded-xl bg-theme-accent/15 border border-theme-accent/25 text-theme-accent">
               <Icon className="w-5 h-5" />
             </div>
           )}
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-theme-text tracking-tight flex items-center gap-2">
               {title}
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/5 text-theme-muted border border-white/10">
                 {items.length}
               </span>
             </h2>
           </div>
         </div>
 
-        {/* Carousel controls */}
+        {/* Carousel controls & Parenting indicator */}
         {items.length > 3 && (
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => scroll('left')}
-              className="p-2 rounded-xl bg-dark-900 border border-slate-800 hover:bg-slate-800 text-slate-300 hover:text-white transition-colors"
-              title="Anterior"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => scroll('right')}
-              className="p-2 rounded-xl bg-dark-900 border border-slate-800 hover:bg-slate-800 text-slate-300 hover:text-white transition-colors"
-              title="Siguiente"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+          <div className="flex items-center gap-3">
+            {/* Barra de progreso de Parenting */}
+            <div className="w-20 h-1.5 bg-white/10 rounded-full overflow-hidden hidden sm:block">
+              <div
+                className="h-full bg-theme-accent transition-all duration-150 parent-sync rounded-full"
+                style={{
+                  width: `${Math.max(15, (1 / Math.ceil(items.length / 2)) * 100)}%`,
+                  transform: `translateX(${scrollProgress * 150}%)`
+                }}
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => scroll('left')}
+                aria-label="Desplazar a la izquierda"
+                className="min-h-10 min-w-10 flex items-center justify-center rounded-xl glass hover:bg-white/10 text-theme-muted hover:text-theme-text transition-colors focus-ring"
+                title="Anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => scroll('right')}
+                aria-label="Desplazar a la derecha"
+                className="min-h-10 min-w-10 flex items-center justify-center rounded-xl glass hover:bg-white/10 text-theme-muted hover:text-theme-text transition-colors focus-ring"
+                title="Siguiente"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -61,30 +87,38 @@ export default function MediaSection({ title, icon: Icon, items = [], onPlay, on
       {items.length > 0 ? (
         <div
           ref={scrollRef}
+          onScroll={handleScroll}
           className="flex gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth snap-x snap-mandatory"
         >
-          {items.map((item) => (
+          {items.map((item, index) => (
             <div
               key={item.id || item.path}
               className="w-[260px] sm:w-[300px] shrink-0 snap-start"
             >
-              <MediaCard item={item} onPlay={onPlay} onDetails={onDetails} />
+              {/* 2. OFFSET & DELAY: Pasamos staggerIndex para escalonar 60ms por card */}
+              <MediaCard
+                item={item}
+                metadata={metadata}
+                staggerIndex={index % 8}
+                onPlay={onPlay}
+                onDetails={onDetails}
+              />
             </div>
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-slate-800 p-8 text-center bg-dark-900/30">
-          <Film className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-          <p className="text-sm text-slate-400 font-medium mb-1">No hay videos en {title} aún</p>
-          <p className="text-xs text-slate-400 mb-4">
-            Puedes subir archivos a Google Drive o usar el módulo de limpieza para transferir videos pesados desde tu PC.
+        <div className="rounded-2xl border border-dashed border-theme-border/60 p-8 text-center glass">
+          <Film className="w-10 h-10 text-theme-muted mx-auto mb-3" />
+          <p className="text-sm text-theme-muted font-medium mb-1">No hay videos en {title} aún</p>
+          <p className="text-xs text-theme-muted mb-4">
+            Puedes subir archivos a Google Drive o usar el módulo de subida clasificada para añadir películas, series o anime.
           </p>
           {onGoToExplorer && (
             <button
               onClick={onGoToExplorer}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
+              className="min-h-12 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-theme-accent hover:bg-theme-accent-hover text-white text-xs font-semibold shadow-md transition-colors focus-ring"
             >
-              <FolderPlus className="w-4 h-4 text-brand-400" />
+              <FolderPlus className="w-4 h-4" />
               <span>Explorar o Subir Archivos</span>
             </button>
           )}

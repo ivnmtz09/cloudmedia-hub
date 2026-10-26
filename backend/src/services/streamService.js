@@ -57,6 +57,7 @@ export async function getMediaInfo(targetPath) {
 
   const videoStream = streams.find((s) => s.codec_type === 'video');
   const audioStreams = streams.filter((s) => s.codec_type === 'audio');
+  const subtitleStreams = streams.filter((s) => s.codec_type === 'subtitle');
 
   let durationSec = parseFloat(format.duration || (videoStream && videoStream.duration) || 0);
 
@@ -85,6 +86,15 @@ export async function getMediaInfo(targetPath) {
     isDefault: stream.disposition ? stream.disposition.default === 1 : false
   }));
 
+  const subtitleTracks = subtitleStreams.map((stream, idx) => ({
+    index: idx,
+    streamIndex: stream.index,
+    codec: stream.codec_name,
+    language: (stream.tags && stream.tags.language) || 'und',
+    title: (stream.tags && (stream.tags.title || stream.tags.handler_name)) || `Subtítulo ${idx + 1}`,
+    isDefault: stream.disposition ? stream.disposition.default === 1 : false
+  }));
+
   return {
     filename: path.basename(fullPath),
     fullPath,
@@ -103,7 +113,8 @@ export async function getMediaInfo(targetPath) {
       fps: videoStream.r_frame_rate ? Math.round(eval(videoStream.r_frame_rate) || 0) : null,
       bitRate: videoStream.bit_rate ? parseInt(videoStream.bit_rate, 10) : null
     } : null,
-    audioTracks
+    audioTracks,
+    subtitleTracks
   };
 }
 

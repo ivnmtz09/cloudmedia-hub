@@ -95,7 +95,7 @@ export function CommandPalette({ isOpen, onClose, catalog = [], metadata = {}, o
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/75 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 obscure-backdrop bg-black/80 animate-fade-in"
       onClick={onClose}
       role="dialog"
       aria-modal="true"

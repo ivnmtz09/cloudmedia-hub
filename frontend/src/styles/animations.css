@@ -1,44 +1,182 @@
-/* Spring easing global */
+/* =========================================================
+   CloudMedia Hub - 12 Principles of UX in Motion
+   ========================================================= */
+
 :root {
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  --stagger-delay: 50ms;
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --stagger-delay: 60ms;
 }
 
-/* Fade + slide up para cards de catálogo y modales */
-@keyframes slideUpFade {
-  from {
+/* 1. EASING: Curvas spring suaves en modales, botones y paneles */
+.transition-spring {
+  transition: all 0.35s var(--ease-spring);
+}
+
+.transition-transform-spring {
+  transition: transform 0.35s var(--ease-spring);
+}
+
+/* 2. OFFSET & DELAY: Entrada escalonada de 60ms en grillas y listas */
+@keyframes staggerFadeUp {
+  0% {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(16px);
   }
-  to {
+  100% {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-@keyframes fadeIn {
-  from {
+.animate-stagger-item {
+  animation: staggerFadeUp 0.45s var(--ease-spring) both;
+}
+
+/* Clases de retraso escalonado (1 al 12) */
+.stagger-delay-1 { animation-delay: 60ms; }
+.stagger-delay-2 { animation-delay: 120ms; }
+.stagger-delay-3 { animation-delay: 180ms; }
+.stagger-delay-4 { animation-delay: 240ms; }
+.stagger-delay-5 { animation-delay: 300ms; }
+.stagger-delay-6 { animation-delay: 360ms; }
+.stagger-delay-7 { animation-delay: 420ms; }
+.stagger-delay-8 { animation-delay: 480ms; }
+.stagger-delay-9 { animation-delay: 540ms; }
+.stagger-delay-10 { animation-delay: 600ms; }
+.stagger-delay-11 { animation-delay: 660ms; }
+.stagger-delay-12 { animation-delay: 720ms; }
+
+/* 3. PARENTING: Sincronización de escala/indicadores con el scroll */
+.parent-sync {
+  transform-origin: center center;
+  transition: transform 0.25s var(--ease-spring), opacity 0.25s ease;
+}
+
+/* 4. TRANSFORMATION (MORPHING): Mutación de geometría para botones */
+.morph-btn {
+  transition: width 0.35s var(--ease-spring), border-radius 0.35s var(--ease-spring), background-color 0.3s ease, padding 0.35s var(--ease-spring);
+}
+
+/* 5. VALUE CHANGE: Pulso sutil al actualizar números */
+@keyframes valuePulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.animate-value-pulse {
+  animation: valuePulse 0.35s var(--ease-spring);
+}
+
+/* 6. MASKING: Revelado suave mediante clip-path */
+.mask-card {
+  clip-path: inset(0 0 0 0 round 16px);
+  transition: clip-path 0.4s var(--ease-spring);
+}
+
+.mask-hover:hover {
+  clip-path: inset(0 0 0 0 round 20px);
+}
+
+/* 7. OVERLAY: Profundidad visual con z-index estructurado */
+.overlay-scrim {
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* 8. CLONING: Expansión de botones hijo desde el nodo padre (FAB) */
+@keyframes cloneSpawn {
+  0% {
     opacity: 0;
+    transform: translateY(20px) scale(0.6);
   }
-  to {
+  100% {
     opacity: 1;
+    transform: translateY(0) scale(1);
   }
+}
+
+.animate-clone-spawn {
+  animation: cloneSpawn 0.3s var(--ease-spring) both;
+}
+
+/* 9. OBSCURATION: Desenfoque progresivo de 20px */
+.obscure-backdrop {
+  backdrop-filter: blur(20px) brightness(0.45);
+  -webkit-backdrop-filter: blur(20px) brightness(0.45);
+}
+
+/* 10. PARALLAX: Desplazamiento diferencial fluido */
+.parallax-layer {
+  will-change: transform;
+  transition: transform 0.15s cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* 11. DIMENSIONALITY (3D): Perspectiva, Tilt 3D y Flip Card 180° */
+.perspective-container {
+  perspective: 1200px;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-style: preserve-3d;
+}
+
+.flip-card-flipped {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front, .flip-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 1rem;
+}
+
+.flip-card-back {
+  transform: rotateY(180deg);
+}
+
+/* 12. DOLLY & ZOOM: Transición espacial en eje Z */
+@keyframes dollyZoomIn {
+  0% {
+    opacity: 0;
+    transform: perspective(1200px) translateZ(-120px) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1200px) translateZ(0) scale(1);
+  }
+}
+
+.animate-dolly-zoom {
+  animation: dollyZoomIn 0.4s var(--ease-spring) both;
+}
+
+/* Transiciones comunes */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.96);
+    transform: scale(0.95);
   }
   to {
     opacity: 1;
     transform: scale(1);
   }
-}
-
-.animate-slide-up {
-  animation: slideUpFade 0.4s var(--ease-spring) both;
 }
 
 .animate-fade-in {
@@ -49,21 +187,15 @@
   animation: scaleIn 0.35s var(--ease-spring) both;
 }
 
-/* Stagger: cada hijo obtiene --stagger-index * 50ms */
-.stagger-children > * {
-  animation: slideUpFade 0.4s var(--ease-spring) both;
-  animation-delay: calc(var(--stagger-index, 0) * var(--stagger-delay));
-}
-
-/* Glassmorphism de alta fidelidad */
+/* Glassmorphism */
 .glass {
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  background: rgba(var(--glass-color, 22, 22, 31), 0.72);
+  background: rgba(var(--glass-color, 22, 22, 31), 0.75);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Glow hover en cards */
+/* Card Glow */
 .card-glow {
   transition: all 0.3s var(--ease-spring);
 }

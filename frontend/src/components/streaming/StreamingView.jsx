@@ -5,11 +5,13 @@ import MediaSection from './MediaSection';
 import VideoPlayerModal from './VideoPlayerModal';
 import MediaDetailsModal from './MediaDetailsModal';
 import SeriesView from './SeriesView';
+import { FloatingUploadFab } from '../upload/FloatingUploadFab';
+import { ClassifiedUploadModal } from '../upload/ClassifiedUploadModal';
 import { fetchCatalog, fetchMetadata, fetchWatchProgress, syncMetadata, fetchSeriesTree } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function StreamingView({ onGoToExplorer, addToast }) {
-  const { hasMinRole } = useAuth();
+  const { user, hasMinRole } = useAuth();
   const [catalog, setCatalog] = useState({
     movies: [],
     series: [],
@@ -26,6 +28,7 @@ export default function StreamingView({ onGoToExplorer, addToast }) {
   const [isSyncingMeta, setIsSyncingMeta] = useState(false);
   const [activeMedia, setActiveMedia] = useState(null);
   const [detailsMedia, setDetailsMedia] = useState(null);
+  const [uploadFabContentType, setUploadFabContentType] = useState(null);
 
   const loadAll = async () => {
     try {
@@ -56,8 +59,10 @@ export default function StreamingView({ onGoToExplorer, addToast }) {
   };
 
   useEffect(() => {
-    loadAll();
-  }, []);
+    if (user) {
+      loadAll();
+    }
+  }, [user]);
 
   const handleSyncMeta = async () => {
     try {
@@ -178,9 +183,10 @@ export default function StreamingView({ onGoToExplorer, addToast }) {
             </div>
           </div>
 
-          {/* Hero Banner */}
+          {/* Hero Banner con Parallax y Metadatos */}
           <HeroBanner
             movie={featuredItem}
+            metadata={metadata}
             onPlay={(item) => setActiveMedia(item)}
             onDetails={(item) => setDetailsMedia(item)}
           />
@@ -237,12 +243,13 @@ export default function StreamingView({ onGoToExplorer, addToast }) {
             </div>
           )}
 
-          {/* Categorized Sections */}
+          {/* Categorized Sections con Parenting y Offset/Delay */}
           <div className="space-y-6 pt-2">
             <MediaSection
               title="Películas"
               icon={Film}
               items={movies}
+              metadata={metadata}
               onPlay={(item) => setActiveMedia(item)}
               onDetails={(item) => setDetailsMedia(item)}
               onGoToExplorer={onGoToExplorer}
@@ -252,6 +259,7 @@ export default function StreamingView({ onGoToExplorer, addToast }) {
               title="Series de TV"
               icon={Tv}
               items={series}
+              metadata={metadata}
               onPlay={(item) => setActiveMedia(item)}
               onDetails={(item) => setDetailsMedia(item)}
               onGoToExplorer={onGoToExplorer}
@@ -262,6 +270,7 @@ export default function StreamingView({ onGoToExplorer, addToast }) {
                 title="Anime"
                 icon={Tv}
                 items={anime}
+                metadata={metadata}
                 onPlay={(item) => setActiveMedia(item)}
                 onDetails={(item) => setDetailsMedia(item)}
                 onGoToExplorer={onGoToExplorer}
@@ -272,11 +281,26 @@ export default function StreamingView({ onGoToExplorer, addToast }) {
               title="Videos Personales"
               icon={Video}
               items={personal}
+              metadata={metadata}
               onPlay={(item) => setActiveMedia(item)}
               onDetails={(item) => setDetailsMedia(item)}
               onGoToExplorer={onGoToExplorer}
             />
           </div>
+
+          {/* 8. CLONING: FAB Flotante para subida clasificada */}
+          <FloatingUploadFab onOpenUpload={(type) => setUploadFabContentType(type)} />
+
+          {/* Modal de Subida activado desde el FAB */}
+          <ClassifiedUploadModal
+            isOpen={!!uploadFabContentType}
+            initialContentType={uploadFabContentType || 'pelicula'}
+            onClose={() => setUploadFabContentType(null)}
+            onUploadSuccess={() => {
+              loadAll();
+              if (addToast) addToast({ type: 'success', title: 'Subida exitosa', message: 'Contenido añadido al catálogo' });
+            }}
+          />
         </>
       )}
 

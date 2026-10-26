@@ -9,7 +9,7 @@ export function ThemePanel({ isOpen, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 obscure-backdrop bg-black/80 animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="theme-panel-title"

@@ -12,7 +12,7 @@ import { useAuth } from './contexts/AuthContext';
 import { fetchStats, refreshStats, fetchCatalog, fetchMetadata } from './services/api';
 
 export default function App() {
-  const { hasRole, isLoginModalOpen, setIsLoginModalOpen } = useAuth();
+  const { user, hasRole, isLoginModalOpen, setIsLoginModalOpen } = useAuth();
   const [activeTab, setActiveTab] = useState('streaming');
   const [stats, setStats] = useState(null);
   const [isRefreshingStats, setIsRefreshingStats] = useState(false);
@@ -64,10 +64,12 @@ export default function App() {
 
   useEffect(() => {
     loadStats();
-    loadCatalogData();
+    if (user) {
+      loadCatalogData();
+    }
     const interval = setInterval(loadStats, 60000);
     return () => clearInterval(interval);
-  }, [loadStats, loadCatalogData]);
+  }, [user, loadStats, loadCatalogData]);
 
   // Global Ctrl+K / Cmd+K listener
   useEffect(() => {
