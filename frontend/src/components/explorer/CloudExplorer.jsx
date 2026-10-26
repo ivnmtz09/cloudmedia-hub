@@ -104,7 +104,7 @@ export default function CloudExplorer({ addToast }) {
       </div>
 
       {/* Main Container */}
-      <div className="glass-panel rounded-3xl border border-slate-800 p-4 sm:p-6 shadow-2xl">
+      <div className="bg-theme-surface rounded-3xl border border-theme-border p-4 sm:p-6 shadow-2xl">
         {/* Navigation & Controls Toolbar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800/80 mb-6">
           {/* Breadcrumbs & Back */}

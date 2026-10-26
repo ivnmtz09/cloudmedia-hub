@@ -85,11 +85,11 @@ export function ClassifiedUploadModal({ isOpen, onClose, onUploadSuccess, initia
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 obscure-backdrop bg-black/80 animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 animate-fade-in"
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-lg rounded-2xl glass p-6 border border-white/10 shadow-2xl animate-scale-in text-theme-text max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-lg rounded-2xl bg-theme-surface p-6 border border-theme-border shadow-2xl animate-scale-in text-theme-text max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-theme-border/60">
           <div className="flex items-center gap-2.5">

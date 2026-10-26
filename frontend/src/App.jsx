@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from './components/common/Navbar';
 import Toast from './components/common/Toast';
+import SplashScreen from './components/common/SplashScreen';
 import StreamingView from './components/streaming/StreamingView';
 import CloudExplorer from './components/explorer/CloudExplorer';
 import MonitoringView from './components/monitoring/MonitoringView';
@@ -116,6 +117,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-colors duration-300">
+      {/* Programmatic Splash Screen on initial session load */}
+      <SplashScreen />
+
       {/* Top Navbar */}
       <Navbar
         activeTab={activeTab}
@@ -161,7 +165,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-theme-border/60 bg-theme-surface/80 py-6 text-center text-xs text-theme-muted">
+      <footer className="border-t border-theme-border bg-theme-surface py-6 text-center text-xs text-theme-muted">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />

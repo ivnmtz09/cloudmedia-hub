@@ -9,18 +9,18 @@ export function ThemePanel({ isOpen, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 obscure-backdrop bg-black/80 animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="theme-panel-title"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-2xl glass p-6 border border-white/10 shadow-2xl animate-scale-in text-theme-text"
+        className="w-full max-w-lg rounded-2xl bg-theme-surface p-6 border border-theme-border shadow-2xl animate-scale-in text-theme-text"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-theme-border/60">
+        <div className="flex items-center justify-between pb-4 border-b border-theme-border">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-theme-accent/15 text-theme-accent">
               <Palette className="w-5 h-5" />
@@ -30,14 +30,14 @@ export function ThemePanel({ isOpen, onClose }) {
                 Apariencia y Visualización
               </h2>
               <p className="text-xs text-theme-muted">
-                Personaliza la paleta cromática y la densidad de grilla
+                Paletas sólidas inspiradas en plataformas de streaming
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="min-h-12 min-w-12 flex items-center justify-center rounded-lg hover:bg-white/10 text-theme-muted hover:text-theme-text transition-colors focus-ring"
+            className="min-h-12 min-w-12 flex items-center justify-center rounded-lg hover:bg-theme-card text-theme-muted hover:text-theme-text transition-colors focus-ring"
             aria-label="Cerrar panel de apariencia"
           >
             <X className="w-5 h-5" />
@@ -58,18 +58,30 @@ export function ThemePanel({ isOpen, onClose }) {
                   onClick={() => changeTheme(t.id)}
                   className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-left transition-all duration-200 focus-ring min-h-12 ${
                     isSelected
-                      ? 'border-theme-accent bg-theme-accent/10 shadow-sm'
-                      : 'border-theme-border/60 hover:border-theme-border hover:bg-white/5'
+                      ? 'border-theme-accent bg-theme-card shadow-sm'
+                      : 'border-theme-border hover:border-theme-accent/60 bg-theme-surface hover:bg-theme-card'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    {/* Color Swatch */}
+                    {/* Swatch de fondo y acento sólido */}
                     <div
-                      className="w-7 h-7 rounded-lg border border-white/20 shadow-inner flex-shrink-0"
-                      style={{ backgroundColor: t.colors.accent }}
-                    />
+                      className="w-8 h-8 rounded-lg border border-theme-border flex items-center justify-center flex-shrink-0 shadow-sm"
+                      style={{ backgroundColor: t.colors.bg }}
+                    >
+                      <div
+                        className="w-4 h-4 rounded-full"
+                        style={{ backgroundColor: t.colors.accent }}
+                      />
+                    </div>
                     <div>
-                      <div className="text-sm font-medium text-theme-text">{t.name}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-theme-text">{t.name}</span>
+                        {t.platform && (
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-theme-border text-theme-muted">
+                            {t.platform}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-theme-muted">{t.description}</div>
                     </div>
                   </div>
@@ -86,7 +98,7 @@ export function ThemePanel({ isOpen, onClose }) {
         </div>
 
         {/* Densidad de Grilla */}
-        <div className="mt-6 pt-5 border-t border-theme-border/60">
+        <div className="mt-6 pt-5 border-t border-theme-border">
           <div className="flex items-center justify-between mb-3">
             <label className="text-xs font-semibold uppercase tracking-wider text-theme-muted flex items-center gap-2">
               <LayoutGrid className="w-4 h-4" />
@@ -105,8 +117,8 @@ export function ThemePanel({ isOpen, onClose }) {
                 onClick={() => setGridDensity(d.id)}
                 className={`min-h-12 p-2.5 rounded-xl border text-center transition-all focus-ring ${
                   gridDensity === d.id
-                    ? 'border-theme-accent bg-theme-accent/15 text-theme-accent font-semibold'
-                    : 'border-theme-border/60 text-theme-muted hover:text-theme-text hover:bg-white/5'
+                    ? 'border-theme-accent bg-theme-card text-theme-accent font-semibold'
+                    : 'border-theme-border text-theme-muted hover:text-theme-text hover:bg-theme-card'
                 }`}
               >
                 <div className="text-xs">{d.label}</div>

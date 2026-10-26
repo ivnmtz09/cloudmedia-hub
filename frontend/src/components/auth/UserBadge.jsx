@@ -70,8 +70,8 @@ export function UserBadge({ addToast }) {
       </button>
 
       {dropdownOpen && (
-        <div className="absolute right-0 mt-2 w-52 rounded-xl glass border border-white/10 shadow-2xl p-2 z-50 animate-scale-in text-theme-text">
-          <div className="px-3 py-2 border-b border-white/10 mb-1">
+        <div className="absolute right-0 mt-2 w-52 rounded-xl bg-theme-surface border border-theme-border shadow-2xl p-2 z-50 animate-scale-in text-theme-text">
+          <div className="px-3 py-2 border-b border-theme-border mb-1">
             <div className="text-xs font-semibold text-theme-text">{user.username}</div>
             <div className="text-[11px] text-theme-muted flex items-center gap-1 mt-0.5">
               <Shield className="w-3 h-3 text-theme-accent" />

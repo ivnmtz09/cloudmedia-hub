@@ -5,8 +5,14 @@ import {
   Info, Volume as VolumeIcon
 } from 'lucide-react';
 import { fetchMediaInfo, getStreamUrl, saveWatchProgress } from '../../services/api';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
+  const { currentTheme } = useTheme();
+  const accentColor = currentTheme?.colors?.accent || '#E50914';
+  const surfaceColor = currentTheme?.colors?.surface || '#1a1a1a';
+  const cardColor = currentTheme?.colors?.card || '#1f1f1f';
+  const borderColor = currentTheme?.colors?.border || '#2d2d2d';
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const audioCtxRef = useRef(null);
@@ -360,15 +366,12 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Color del indicador de volumen VLC según el porcentaje (0-100%, 100-150%, 150-200%)
+  // Color del indicador de volumen VLC adaptado al tema actual (0-100%, 100-150%, 150-200%)
   const volumePercentage = Math.round((isMuted ? 0 : volume) * 100);
-  let volumeColorClass = 'text-emerald-400 bg-emerald-500';
-  let volumeHex = '#10b981'; // Verde VLC estándar
+  let volumeHex = accentColor;
   if (volumePercentage > 150) {
-    volumeColorClass = 'text-red-500 bg-red-500';
     volumeHex = '#ef4444'; // Rojo boost extremo
   } else if (volumePercentage > 100) {
-    volumeColorClass = 'text-amber-400 bg-amber-500';
     volumeHex = '#f59e0b'; // Ámbar sobreamplificación
   }
 
@@ -389,7 +392,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center obscure-backdrop bg-black/90 animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 animate-fade-in"
       role="dialog"
       aria-modal="true"
     >
@@ -397,20 +400,23 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
         ref={containerRef}
         onMouseMove={handleMouseMove}
         onWheel={handleWheel}
-        className="relative w-full h-full max-w-7xl max-h-screen flex flex-col justify-between bg-[#111216] select-none overflow-hidden animate-dolly-zoom border border-[#2b2d38] shadow-2xl"
+        className="relative w-full h-full max-w-7xl max-h-screen flex flex-col justify-between bg-black select-none overflow-hidden animate-dolly-zoom border border-theme-border shadow-2xl"
       >
         {/* ================= BARRA SUPERIOR VLC ================= */}
         <div
-          className={`absolute top-0 left-0 right-0 z-30 p-4 bg-gradient-to-b from-black/85 via-black/40 to-transparent transition-opacity duration-300 flex items-center justify-between ${
+          className={`absolute top-0 left-0 right-0 z-30 p-4 bg-gradient-to-b from-black/90 via-black/50 to-transparent transition-opacity duration-300 flex items-center justify-between ${
             showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
         >
           {/* Título y badge VLC */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#1e2029] border border-[#323642] text-[11px] font-mono text-slate-300 shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+              <span
+                className="w-2 h-2 rounded-full animate-pulse"
+                style={{ backgroundColor: accentColor }}
+              />
               <span>VLC Engine</span>
-              {isMkv && <span className="text-brand-400 font-bold ml-1">MKV Remux</span>}
+              {isMkv && <span className="font-bold ml-1" style={{ color: accentColor }}>MKV Remux</span>}
             </div>
             <div>
               <h2 className="text-sm font-semibold text-white tracking-wide truncate max-w-md md:max-w-xl">
@@ -432,7 +438,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
           <button
             onClick={onClose}
             aria-label="Cerrar reproductor"
-            className="min-h-12 min-w-12 flex items-center justify-center rounded-xl bg-black/50 hover:bg-white/10 text-slate-300 hover:text-white transition-colors focus-ring"
+            className="min-h-12 min-w-12 flex items-center justify-center rounded-xl bg-black/70 hover:bg-white/10 text-slate-300 hover:text-white transition-colors focus-ring"
           >
             <X className="w-5 h-5" />
           </button>
@@ -441,7 +447,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
         {/* ================= OSD SUPERIOR DERECHO (ESTILO VLC) ================= */}
         {osdMessage && (
           <div className="absolute top-20 right-6 z-40 animate-fade-in pointer-events-none">
-            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-black/85 border border-[#353847] shadow-2xl backdrop-blur-md">
+            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#141414] border border-[#353847] shadow-2xl">
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
                 style={{ backgroundColor: volumeHex + '25', color: volumeHex }}
@@ -505,22 +511,26 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
             playsInline
           />
 
-          {/* Spinner de buffering */}
+          {/* Spinner de buffering limpio y elegante con el color de acento del tema activo */}
           {isBuffering && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm pointer-events-none">
-              <Loader2 className="w-12 h-12 text-brand-500 animate-spin mb-2" />
-              <span className="text-xs font-medium text-slate-300">
-                {isLoadingInfo ? 'Sincronizando pistas de audio...' : 'Cargando stream...'}
-              </span>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/60 pointer-events-none z-20">
+              <div
+                className="w-14 h-14 rounded-full border-4 border-t-transparent animate-spin"
+                style={{
+                  borderColor: `${accentColor}30`,
+                  borderTopColor: accentColor
+                }}
+              />
             </div>
           )}
         </div>
 
         {/* ================= BARRA INFERIOR DE CONTROLES VLC ================= */}
         <div
-          className={`absolute bottom-0 left-0 right-0 z-30 bg-[#16181f]/95 border-t border-[#2a2d39] backdrop-blur-xl transition-opacity duration-300 p-3 sm:p-4 text-slate-200 ${
+          className={`absolute bottom-0 left-0 right-0 z-30 border-t transition-opacity duration-300 p-3 sm:p-4 text-slate-200 ${
             showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
+          style={{ backgroundColor: surfaceColor, borderColor }}
         >
           {/* BARRA DE PROGRESO CON TIME SCRUBBING */}
           <div className="space-y-1 mb-2">
@@ -532,9 +542,10 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                 step="0.5"
                 value={currentTime}
                 onChange={(e) => seekTo(parseFloat(e.target.value))}
-                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500 hover:h-2.5 transition-all"
+                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer hover:h-2.5 transition-all"
                 style={{
-                  background: `linear-gradient(to right, #f97316 0%, #f97316 ${
+                  accentColor: accentColor,
+                  background: `linear-gradient(to right, ${accentColor} 0%, ${accentColor} ${
                     totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0
                   }%, #2d313d ${
                     totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0
@@ -576,7 +587,11 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
               <button
                 onClick={togglePlay}
                 aria-label={isPlaying ? 'Pausar' : 'Reproducir'}
-                className="min-h-12 min-w-12 flex items-center justify-center rounded-xl bg-orange-600 hover:bg-orange-500 text-white shadow-md shadow-orange-600/30 transition-transform active:scale-95 focus-ring"
+                className="min-h-12 min-w-12 flex items-center justify-center rounded-xl text-white shadow-md transition-transform active:scale-95 focus-ring"
+                style={{
+                  backgroundColor: accentColor,
+                  boxShadow: `0 4px 14px ${accentColor}40`
+                }}
               >
                 {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
               </button>
@@ -619,14 +634,17 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                   title="Reproducir siguiente episodio"
                   className="min-h-12 px-3 flex items-center gap-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors focus-ring text-xs font-semibold"
                 >
-                  <SkipForward className="w-4 h-4 text-orange-400" />
+                  <SkipForward className="w-4 h-4" style={{ color: accentColor }} />
                   <span className="hidden md:inline">Siguiente</span>
                 </button>
               )}
             </div>
 
             {/* CENTRO: CONTROL DE VOLUMEN VLC HASTA 200% */}
-            <div className="flex items-center gap-2 sm:gap-3 bg-[#111217] px-3 py-1.5 rounded-xl border border-[#2a2d39]">
+            <div
+              className="flex items-center gap-2 sm:gap-3 px-3 py-1.5 rounded-xl border"
+              style={{ backgroundColor: cardColor, borderColor }}
+            >
               {/* Mute Button */}
               <button
                 onClick={toggleMute}
@@ -635,12 +653,8 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
               >
                 {isMuted || volume === 0 ? (
                   <VolumeX className="w-4 h-4 text-red-400" />
-                ) : volume > 1.0 ? (
-                  <Volume2 className={`w-4 h-4 ${volumeColorClass}`} />
-                ) : volume > 0.5 ? (
-                  <Volume2 className="w-4 h-4 text-emerald-400" />
                 ) : (
-                  <Volume1 className="w-4 h-4 text-slate-300" />
+                  <Volume2 className="w-4 h-4" style={{ color: volumeHex }} />
                 )}
               </button>
 
@@ -661,22 +675,22 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                   const isActive = (isMuted ? 0 : volume) >= barThreshold - 0.08;
                   const barHeightPct = 25 + (i / 11) * 75; // Altura triangular del 25% al 100%
 
-                  let barColor = 'bg-slate-700';
+                  let barStyle = { backgroundColor: '#334155' };
                   if (isActive) {
                     if (barThreshold > 1.5) {
-                      barColor = 'bg-red-500'; // Rojo (>150%)
+                      barStyle = { backgroundColor: '#ef4444' };
                     } else if (barThreshold > 1.0) {
-                      barColor = 'bg-amber-400'; // Ámbar (100-150%)
+                      barStyle = { backgroundColor: '#f59e0b' };
                     } else {
-                      barColor = 'bg-emerald-400'; // Verde (0-100%)
+                      barStyle = { backgroundColor: accentColor };
                     }
                   }
 
                   return (
                     <div
                       key={i}
-                      className={`w-[4px] sm:w-[5px] rounded-t-sm transition-all duration-100 ${barColor}`}
-                      style={{ height: `${barHeightPct}%` }}
+                      className="w-[4px] sm:w-[5px] rounded-t-sm transition-all duration-100"
+                      style={{ height: `${barHeightPct}%`, ...barStyle }}
                     />
                   );
                 })}
@@ -684,7 +698,8 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
 
               {/* Porcentaje numérico de volumen (0% a 200%) */}
               <span
-                className={`font-mono text-xs font-bold min-w-[42px] text-right transition-colors ${volumeColorClass}`}
+                className="font-mono text-xs font-bold min-w-[42px] text-right transition-colors"
+                style={{ color: volumeHex }}
               >
                 {volumePercentage}%
               </span>
@@ -701,18 +716,25 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                   }}
                   aria-label="Pistas de audio"
                   title="Seleccionar pista de audio (S)"
-                  className={`min-h-12 min-w-12 flex items-center justify-center rounded-xl border transition-colors focus-ring ${
+                  className="min-h-12 min-w-12 flex items-center justify-center rounded-xl border transition-colors focus-ring"
+                  style={
                     showAudioMenu
-                      ? 'bg-orange-500/20 border-orange-500/40 text-orange-400'
-                      : 'bg-white/5 border-white/5 text-slate-300 hover:text-white hover:bg-white/10'
-                  }`}
+                      ? { backgroundColor: `${accentColor}25`, borderColor: `${accentColor}50`, color: accentColor }
+                      : { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.05)', color: '#cbd5e1' }
+                  }
                 >
                   <Music2 className="w-4 h-4" />
                 </button>
 
                 {showAudioMenu && (
-                  <div className="absolute bottom-14 right-0 w-60 rounded-xl bg-[#161821] border border-[#2e3140] shadow-2xl p-2 z-50 text-xs animate-scale-in">
-                    <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-[#2e3140] mb-1">
+                  <div
+                    className="absolute bottom-14 right-0 w-60 rounded-xl border shadow-2xl p-2 z-50 text-xs animate-scale-in"
+                    style={{ backgroundColor: cardColor, borderColor }}
+                  >
+                    <div
+                      className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b mb-1"
+                      style={{ borderColor }}
+                    >
                       Pistas de Audio VLC
                     </div>
                     {audioTracks.length > 0 ? (
@@ -720,11 +742,12 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                         <button
                           key={track.index}
                           onClick={() => handleSelectAudioTrack(track.index)}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
+                          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors"
+                          style={
                             selectedTrackIndex === track.index
-                              ? 'bg-orange-500/20 text-orange-400 font-semibold'
-                              : 'text-slate-300 hover:bg-white/5'
-                          }`}
+                              ? { backgroundColor: `${accentColor}25`, color: accentColor, fontWeight: '600' }
+                              : { color: '#cbd5e1' }
+                          }
                         >
                           <div>
                             <div>{track.title || `Pista ${track.index + 1}`}</div>
@@ -754,18 +777,25 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                     }}
                     aria-label="Subtítulos"
                     title="Seleccionar subtítulo"
-                    className={`min-h-12 min-w-12 flex items-center justify-center rounded-xl border transition-colors focus-ring ${
+                    className="min-h-12 min-w-12 flex items-center justify-center rounded-xl border transition-colors focus-ring"
+                    style={
                       showSubtitleMenu
-                        ? 'bg-orange-500/20 border-orange-500/40 text-orange-400'
-                        : 'bg-white/5 border-white/5 text-slate-300 hover:text-white hover:bg-white/10'
-                    }`}
+                        ? { backgroundColor: `${accentColor}25`, borderColor: `${accentColor}50`, color: accentColor }
+                        : { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.05)', color: '#cbd5e1' }
+                    }
                   >
                     <Subtitles className="w-4 h-4" />
                   </button>
 
                   {showSubtitleMenu && (
-                    <div className="absolute bottom-14 right-0 w-56 rounded-xl bg-[#161821] border border-[#2e3140] shadow-2xl p-2 z-50 text-xs animate-scale-in">
-                      <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-[#2e3140] mb-1">
+                    <div
+                      className="absolute bottom-14 right-0 w-56 rounded-xl border shadow-2xl p-2 z-50 text-xs animate-scale-in"
+                      style={{ backgroundColor: cardColor, borderColor }}
+                    >
+                      <div
+                        className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b mb-1"
+                        style={{ borderColor }}
+                      >
                         Subtítulos
                       </div>
                       <button
@@ -774,11 +804,12 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                           setShowSubtitleMenu(false);
                           triggerOsd('Subtítulos desactivados', null, 'info');
                         }}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
+                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors"
+                        style={
                           selectedSubtitleIndex === -1
-                            ? 'bg-orange-500/20 text-orange-400 font-semibold'
-                            : 'text-slate-300 hover:bg-white/5'
-                        }`}
+                            ? { backgroundColor: `${accentColor}25`, color: accentColor, fontWeight: '600' }
+                            : { color: '#cbd5e1' }
+                        }
                       >
                         <span>Desactivados</span>
                         {selectedSubtitleIndex === -1 && <Check className="w-3.5 h-3.5" />}
@@ -792,11 +823,12 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                             setShowSubtitleMenu(false);
                             triggerOsd(`Subtítulo: ${sub.title || sub.language}`, null, 'info');
                           }}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
+                          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors"
+                          style={
                             selectedSubtitleIndex === sub.index
-                              ? 'bg-orange-500/20 text-orange-400 font-semibold'
-                              : 'text-slate-300 hover:bg-white/5'
-                          }`}
+                              ? { backgroundColor: `${accentColor}25`, color: accentColor, fontWeight: '600' }
+                              : { color: '#cbd5e1' }
+                          }
                         >
                           <div>
                             <div>{sub.title || `Subtítulo ${sub.index + 1}`}</div>

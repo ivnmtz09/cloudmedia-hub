@@ -67,7 +67,7 @@ export default function QuotaDashboard({ stats, isRefreshing, onRefresh }) {
       {/* Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Card 1: Google Drive Quota (500 GB) */}
-        <div className={`glass-card rounded-3xl p-6 border ${driveBorderColor} relative overflow-hidden flex flex-col justify-between`}>
+        <div className={`bg-theme-surface rounded-3xl p-6 border ${driveBorderColor} relative overflow-hidden flex flex-col justify-between`}>
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -119,7 +119,7 @@ export default function QuotaDashboard({ stats, isRefreshing, onRefresh }) {
         </div>
 
         {/* Card 2: Local Disk (/) */}
-        <div className="glass-card rounded-3xl p-6 border border-slate-800 relative overflow-hidden flex flex-col justify-between">
+        <div className="bg-theme-surface rounded-3xl p-6 border border-theme-border relative overflow-hidden flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">

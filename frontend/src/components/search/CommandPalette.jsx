@@ -95,13 +95,13 @@ export function CommandPalette({ isOpen, onClose, catalog = [], metadata = {}, o
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 obscure-backdrop bg-black/80 animate-fade-in"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/85 animate-fade-in"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="w-full max-w-2xl rounded-2xl glass border border-white/10 shadow-2xl overflow-hidden animate-scale-in text-theme-text"
+        className="w-full max-w-2xl rounded-2xl bg-theme-surface border border-theme-border shadow-2xl overflow-hidden animate-scale-in text-theme-text"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}

@@ -64,7 +64,7 @@ export default function CleanupModule({ onFileMovedOrDeleted, addToast }) {
   };
 
   return (
-    <div className="glass-panel rounded-3xl border border-slate-800 p-6 shadow-2xl">
+    <div className="bg-theme-surface rounded-3xl border border-theme-border p-6 shadow-2xl">
       {/* Header & Metric Summary */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800/80 mb-6">
         <div>

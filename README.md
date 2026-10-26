@@ -29,9 +29,11 @@ Plataforma web modular de streaming de alto rendimiento y gestión de almacenami
 - **Command Palette (`Ctrl+K`):**
   - Buscador difuso instantaneo con filtros dinamicos por categoria (`Peliculas`, `Series`, `Anime`), resolucion (`1080p`, `720p`) y audio (`DUAL`, `LAT`).
 - **Sistema de Diseno y UX Motion:**
-  - 5 paletas de color integradas: *AlfaCode Obsidian* (predeterminado), *Cinema Crimson*, *Cyber Violet*, *Emerald Terminal* y *Daylight Studio*.
-  - Curvas de aceleracion spring (`cubic-bezier(0.16, 1, 0.3, 1)`), glassmorphism, tarjeta giratoria 3D para ficha tecnica y micro-interacciones.
-  - Accesibilidad WCAG con areas tactiles minimas de 48px y cero uso de emojis en toda la interfaz (iconografia vectorial SVG pura).
+  - 5 paletas de color puras y sólidas inspiradas en plataformas de streaming: *Redflix* (Netflix, predeterminado), *Magic Plus* (Disney+), *Anime Studio* (Crunchyroll), *Max Cinema* (Max/HBO) y *Prime Vision* (Prime Video).
+  - Eliminacion total de glassmorphism: superficies solidas, opacas y definidas con bordes limpios acordes a cada tema.
+  - Animacion de inicio (Splash Screen) cinematografica al inicio de sesion con despliegue de curvas de easing suaves.
+  - Reproductor VLC con controles dinamicos que heredan el color del tema y spinner de carga limpio sin textos numericos.
+  - Accesibilidad WCAG con areas tactiles minimas de 48px y cero uso de emojis en toda la interfaz (iconografia vectorial SVG de Lucide).
 
 ---
 

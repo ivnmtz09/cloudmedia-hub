@@ -24,7 +24,7 @@ export default function HeroBanner({ movie, metadata = {}, onPlay, onDetails }) 
 
   if (!movie) {
     return (
-      <div className="relative rounded-3xl overflow-hidden glass border border-white/10 p-8 sm:p-12 mb-10 shadow-2xl">
+      <div className="relative rounded-3xl overflow-hidden bg-theme-surface border border-theme-border p-8 sm:p-12 mb-10 shadow-2xl">
         <div className="max-w-2xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-theme-accent/15 border border-theme-accent/25 text-theme-accent text-xs font-semibold mb-4">
             <Sparkles className="w-3.5 h-3.5" />
@@ -81,7 +81,7 @@ export default function HeroBanner({ movie, metadata = {}, onPlay, onDetails }) 
             Destacado
           </span>
 
-          <span className="px-2.5 py-0.5 rounded-md bg-white/10 backdrop-blur-md border border-white/10 text-white text-xs font-semibold">
+          <span className="px-2.5 py-0.5 rounded-md bg-theme-card border border-theme-border text-white text-xs font-semibold">
             {ext || 'VIDEO'}
           </span>
 
@@ -117,7 +117,7 @@ export default function HeroBanner({ movie, metadata = {}, onPlay, onDetails }) 
 
           <button
             onClick={() => onDetails && onDetails(movie)}
-            className="min-h-12 flex items-center gap-2 px-6 py-3.5 rounded-2xl glass hover:bg-white/10 text-slate-200 hover:text-white font-semibold text-sm border border-white/10 transition-all duration-200 focus-ring"
+            className="min-h-12 flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-theme-card hover:bg-theme-border/60 text-slate-200 hover:text-white font-semibold text-sm border border-theme-border transition-all duration-200 focus-ring"
           >
             <Info className="w-4 h-4" />
             <span>Metadatos &amp; Pistas</span>

@@ -5,7 +5,7 @@ import EpisodeProgressBar from './EpisodeProgressBar';
 export function SeriesView({ series, watchProgress = {}, onPlayEpisode, onBack }) {
   if (!series || !series.seasons || series.seasons.length === 0) {
     return (
-      <div className="p-8 text-center text-theme-muted glass rounded-2xl">
+      <div className="p-8 text-center text-theme-muted bg-theme-surface rounded-2xl border border-theme-border">
         <Tv className="w-12 h-12 mx-auto mb-3 opacity-30 text-theme-accent" />
         <h3 className="text-base font-semibold text-theme-text">No hay temporadas registradas</h3>
         <p className="text-xs text-theme-muted mt-1">
@@ -43,7 +43,7 @@ export function SeriesView({ series, watchProgress = {}, onPlayEpisode, onBack }
   return (
     <div className="space-y-6 animate-fade-in text-theme-text">
       {/* Header Banner */}
-      <div className="relative rounded-2xl overflow-hidden glass p-6 border border-white/10 flex flex-col md:flex-row gap-6 items-start md:items-center">
+      <div className="relative rounded-2xl overflow-hidden bg-theme-surface p-6 border border-theme-border flex flex-col md:flex-row gap-6 items-start md:items-center">
         <div className="w-24 h-36 sm:w-32 sm:h-48 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center overflow-hidden shadow-xl">
           {series.posterUrl ? (
             <img src={series.posterUrl} alt="" className="w-full h-full object-cover" />
@@ -129,7 +129,7 @@ export function SeriesView({ series, watchProgress = {}, onPlayEpisode, onBack }
                 <div
                   key={ep.path || idx}
                   onClick={() => onPlayEpisode(ep)}
-                  className="group flex items-center gap-4 p-3 rounded-xl glass border border-white/5 hover:border-theme-accent/30 hover:bg-white/5 cursor-pointer transition-all"
+                  className="group flex items-center gap-4 p-3 rounded-xl bg-theme-surface border border-theme-border hover:border-theme-accent hover:bg-theme-card cursor-pointer transition-all"
                 >
                   {/* Episode Number / Thumbnail Placeholder */}
                   <div className="w-16 h-12 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center flex-shrink-0 relative overflow-hidden group-hover:border-theme-accent/40">

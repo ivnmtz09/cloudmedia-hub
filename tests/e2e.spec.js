@@ -184,16 +184,16 @@ test.describe('CloudMedia Hub - E2E Suite (Clean Auth, Profile, Admin Dashboard 
     await themeBtn.click();
 
     await expect(page.locator('text=Apariencia y Visualización')).toBeVisible();
-    await expect(page.locator('text=AlfaCode Obsidian')).toBeVisible();
-    await expect(page.locator('text=Cinema Crimson')).toBeVisible();
-    await expect(page.locator('text=Cyber Violet')).toBeVisible();
-    await expect(page.locator('text=Emerald Terminal')).toBeVisible();
-    await expect(page.locator('text=Daylight Studio')).toBeVisible();
+    await expect(page.locator('text=Redflix')).toBeVisible();
+    await expect(page.locator('text=Magic Plus')).toBeVisible();
+    await expect(page.locator('text=Anime Studio')).toBeVisible();
+    await expect(page.locator('text=Max Cinema')).toBeVisible();
+    await expect(page.locator('text=Prime Vision')).toBeVisible();
 
-    await page.locator('button:has-text("Cinema Crimson")').click();
+    await page.locator('button:has-text("Anime Studio")').click();
 
     const htmlTheme = await page.getAttribute('html', 'data-theme');
-    expect(htmlTheme).toBe('cinema-crimson');
+    expect(htmlTheme).toBe('anime-studio');
   });
 
   test('7. VLC Player with Web Audio API 200% volume, triangular meter and real duration', async ({ page }) => {

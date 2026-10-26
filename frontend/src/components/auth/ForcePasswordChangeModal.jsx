@@ -51,11 +51,11 @@ export function ForcePasswordChangeModal({ isOpen, onPasswordChanged }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 obscure-backdrop bg-black/85 animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 animate-fade-in"
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-md rounded-2xl glass p-7 border border-amber-500/30 shadow-2xl animate-scale-in text-theme-text">
+      <div className="w-full max-w-md rounded-2xl bg-theme-surface p-7 border border-amber-500/50 shadow-2xl animate-scale-in text-theme-text">
         {/* Header */}
         <div className="text-center mb-6">
           <div className="inline-flex p-3 rounded-2xl bg-amber-500/15 text-amber-400 mb-3 border border-amber-500/30">

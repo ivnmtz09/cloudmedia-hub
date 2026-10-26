@@ -2,7 +2,8 @@
  * API Client for CloudMedia Hub Frontend
  */
 
-export const API_BASE = import.meta.env.VITE_API_URL || '';
+const rawBase = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+export const API_BASE = rawBase.replace(/\/$/, '');
 
 function getAuthHeaders(extraHeaders = {}) {
   const token = localStorage.getItem('cmh_token');

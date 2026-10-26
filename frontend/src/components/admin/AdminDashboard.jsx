@@ -85,7 +85,7 @@ export function AdminDashboard({ stats, onRefreshStats, addToast }) {
     <div className="flex flex-col lg:flex-row gap-6 animate-fade-in text-theme-text min-h-[calc(100vh-140px)]">
       {/* ================= PANEL LATERAL FIJO (ASIDE) ================= */}
       <aside className="w-full lg:w-72 shrink-0">
-        <div className="glass rounded-2xl p-3 border border-white/10 sticky top-20 space-y-1">
+        <div className="bg-theme-surface rounded-2xl p-3 border border-theme-border sticky top-20 space-y-1">
           {/* Header Aside */}
           <div className="px-3 py-3 border-b border-theme-border/60 mb-2">
             <div className="flex items-center gap-2">
@@ -153,7 +153,7 @@ export function AdminDashboard({ stats, onRefreshStats, addToast }) {
         {activeSection === 'overview' && (
           <div className="space-y-6 animate-fade-in">
             {/* Encabezado */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl glass border border-white/10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-theme-surface border border-theme-border">
               <div>
                 <h1 className="text-xl font-bold tracking-tight text-theme-text flex items-center gap-2">
                   <span>Resumen del Sistema CloudMedia</span>
@@ -175,7 +175,7 @@ export function AdminDashboard({ stats, onRefreshStats, addToast }) {
                 <button
                   onClick={handleRefreshQuotaNow}
                   disabled={refreshingQuota}
-                  className="min-h-12 flex items-center gap-2 px-4 py-2 rounded-xl glass hover:bg-white/10 text-theme-text text-xs font-semibold border border-white/10 transition-all focus-ring disabled:opacity-50"
+                  className="min-h-12 flex items-center gap-2 px-4 py-2 rounded-xl bg-theme-card hover:bg-theme-border text-theme-text text-xs font-semibold border border-theme-border transition-all focus-ring disabled:opacity-50"
                   title="Actualizar cuota de rclone"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${refreshingQuota ? 'animate-spin text-theme-accent' : ''}`} />
@@ -187,7 +187,7 @@ export function AdminDashboard({ stats, onRefreshStats, addToast }) {
             {/* Grid de Métricas Principales */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Cuota Nube */}
-              <div className="p-5 rounded-2xl glass border border-white/10 flex flex-col justify-between">
+              <div className="p-5 rounded-2xl bg-theme-surface border border-theme-border flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-wider text-theme-muted">Cuota Nube (500GB)</span>
                   <Database className="w-4 h-4 text-theme-accent" />
@@ -209,7 +209,7 @@ export function AdminDashboard({ stats, onRefreshStats, addToast }) {
               </div>
 
               {/* Disco Local */}
-              <div className="p-5 rounded-2xl glass border border-white/10 flex flex-col justify-between">
+              <div className="p-5 rounded-2xl bg-theme-surface border border-theme-border flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-wider text-theme-muted">Disco Local (/)</span>
                   <HardDrive className="w-4 h-4 text-emerald-400" />
@@ -231,7 +231,7 @@ export function AdminDashboard({ stats, onRefreshStats, addToast }) {
               </div>
 
               {/* Cuentas Totales */}
-              <div className="p-5 rounded-2xl glass border border-white/10 flex flex-col justify-between">
+              <div className="p-5 rounded-2xl bg-theme-surface border border-theme-border flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-wider text-theme-muted">Usuarios Totales</span>
                   <Users className="w-4 h-4 text-indigo-400" />
@@ -248,7 +248,7 @@ export function AdminDashboard({ stats, onRefreshStats, addToast }) {
               </div>
 
               {/* Uptime Servidor */}
-              <div className="p-5 rounded-2xl glass border border-white/10 flex flex-col justify-between">
+              <div className="p-5 rounded-2xl bg-theme-surface border border-theme-border flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-wider text-theme-muted">Tiempo Activo</span>
                   <Clock className="w-4 h-4 text-amber-400" />
@@ -269,7 +269,7 @@ export function AdminDashboard({ stats, onRefreshStats, addToast }) {
             </div>
 
             {/* Gráfico Comparativo y Desglose Visual de Almacenamiento */}
-            <div className="p-6 rounded-2xl glass border border-white/10 space-y-4">
+            <div className="p-6 rounded-2xl bg-theme-surface border border-theme-border space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-bold uppercase tracking-wider text-theme-text flex items-center gap-2">
                   <Database className="w-4 h-4 text-theme-accent" />
@@ -310,7 +310,7 @@ export function AdminDashboard({ stats, onRefreshStats, addToast }) {
             </div>
 
             {/* Registro de Eventos del Sistema & Auditoría */}
-            <div className="p-6 rounded-2xl glass border border-white/10 space-y-3">
+            <div className="p-6 rounded-2xl bg-theme-surface border border-theme-border space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-theme-border/60">
                 <div className="flex items-center gap-2">
                   <Terminal className="w-4 h-4 text-theme-accent" />
@@ -393,7 +393,7 @@ export function AdminDashboard({ stats, onRefreshStats, addToast }) {
         {/* SECCIÓN 6: AJUSTES DEL SERVIDOR */}
         {activeSection === 'server' && (
           <div className="space-y-6 animate-fade-in">
-            <div className="p-6 rounded-2xl glass border border-white/10 space-y-4">
+            <div className="p-6 rounded-2xl bg-theme-surface border border-theme-border space-y-4">
               <div className="flex items-center gap-2 pb-3 border-b border-theme-border/60">
                 <Server className="w-5 h-5 text-theme-accent" />
                 <h2 className="text-base font-bold text-theme-text">

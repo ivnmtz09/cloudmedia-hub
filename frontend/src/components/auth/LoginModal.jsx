@@ -28,11 +28,11 @@ export function LoginModal({ isOpen, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 obscure-backdrop bg-black/80 animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 animate-fade-in"
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-md rounded-2xl glass p-7 border border-white/10 shadow-2xl animate-scale-in text-theme-text">
+      <div className="w-full max-w-md rounded-2xl bg-theme-surface p-7 border border-theme-border shadow-2xl animate-scale-in text-theme-text">
         {/* Title */}
         <div className="text-center mb-6">
           <div className="inline-flex p-3.5 rounded-2xl bg-theme-accent/15 text-theme-accent mb-3 border border-theme-accent/20">

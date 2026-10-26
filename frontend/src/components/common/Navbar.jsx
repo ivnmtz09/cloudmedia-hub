@@ -57,7 +57,7 @@ export default function Navbar({
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full glass border-b border-theme-border/60 transition-all">
+      <header className="sticky top-0 z-40 w-full bg-theme-surface border-b border-theme-border transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
           {/* Brand + Nav Tabs */}
           <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
@@ -180,7 +180,7 @@ export default function Navbar({
         <nav
           role="tablist"
           aria-label="Navegación móvil"
-          className="lg:hidden flex items-center justify-around py-1.5 border-t border-theme-border/60 text-xs bg-theme-surface/90 backdrop-blur-md"
+          className="lg:hidden flex items-center justify-around py-1.5 border-t border-theme-border text-xs bg-theme-surface"
         >
           {tabs.map(({ id, label, Icon }) => {
             const isActive = activeTab === id;

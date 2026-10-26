@@ -1,5 +1,6 @@
 /* =========================================================
    CloudMedia Hub - 12 Principles of UX in Motion
+   Zero Glassmorphism - Solid High-Definition Surfaces
    ========================================================= */
 
 :root {
@@ -80,11 +81,9 @@
   clip-path: inset(0 0 0 0 round 20px);
 }
 
-/* 7. OVERLAY: Profundidad visual con z-index estructurado */
+/* 7. OVERLAY: Fondo sólido opaco definido (Sin blur) */
 .overlay-scrim {
-  background: rgba(0, 0, 0, 0.78);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(0, 0, 0, 0.85);
 }
 
 /* 8. CLONING: Expansión de botones hijo desde el nodo padre (FAB) */
@@ -103,10 +102,9 @@
   animation: cloneSpawn 0.3s var(--ease-spring) both;
 }
 
-/* 9. OBSCURATION: Desenfoque progresivo de 20px */
+/* 9. OBSCURATION: Fondo sólido opaco sin desenfoque translúcido */
 .obscure-backdrop {
-  backdrop-filter: blur(20px) brightness(0.45);
-  -webkit-backdrop-filter: blur(20px) brightness(0.45);
+  background: rgba(0, 0, 0, 0.85);
 }
 
 /* 10. PARALLAX: Desplazamiento diferencial fluido */
@@ -187,12 +185,10 @@
   animation: scaleIn 0.35s var(--ease-spring) both;
 }
 
-/* Glassmorphism */
+/* Superficie sólida opaca que reemplaza todo glassmorphism */
 .glass {
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  background: rgba(var(--glass-color, 22, 22, 31), 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--color-surface, #1a1a1a);
+  border: 1px solid var(--color-border, #2d2d2d);
 }
 
 /* Card Glow */
@@ -201,9 +197,9 @@
 }
 
 .card-glow:hover {
-  box-shadow: 0 0 24px rgba(var(--color-accent-glow, 99, 102, 241), 0.28);
+  box-shadow: 0 0 24px rgba(var(--color-accent-glow, 229, 9, 20), 0.28);
   transform: translateY(-3px);
-  border-color: rgba(var(--color-accent-glow, 99, 102, 241), 0.4);
+  border-color: rgba(var(--color-accent-glow, 229, 9, 20), 0.4);
 }
 
 /* Focus ring accesible */
@@ -214,4 +210,54 @@
 
 .focus-ring:focus-visible {
   box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent);
+}
+
+/* Splash Screen Choreography */
+@keyframes splashIntro {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes splashDrawStroke {
+  0% {
+    stroke-dashoffset: 120;
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes splashFadeOut {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.06);
+    pointer-events: none;
+  }
+}
+
+.animate-splash-intro {
+  animation: splashIntro 0.9s var(--ease-spring) both;
+}
+
+.animate-splash-exit {
+  animation: splashFadeOut 0.5s ease-in-out both;
 }

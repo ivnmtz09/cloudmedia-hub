@@ -70,10 +70,10 @@ export default function MediaCard({ item, metadata = {}, onPlay, onDetails, stag
         {/* ================= CARA FRONTAL ================= */}
         <div
           onClick={() => onPlay(item)}
-          className="flip-card-front mask-card flex flex-col justify-between glass border border-white/10 hover:border-theme-accent/50 card-glow cursor-pointer overflow-hidden bg-theme-card"
+          className="flip-card-front mask-card flex flex-col justify-between border border-theme-border hover:border-theme-accent card-glow cursor-pointer overflow-hidden bg-theme-card"
         >
           {/* Póster / Thumbnail Aspect Ratio 16:9 o Póster */}
-          <div className="relative aspect-[16/10] w-full overflow-hidden bg-black/60 flex items-center justify-center">
+          <div className="relative aspect-[16/10] w-full overflow-hidden bg-black/80 flex items-center justify-center">
             {posterUrl ? (
               <img
                 src={posterUrl}
@@ -83,8 +83,8 @@ export default function MediaCard({ item, metadata = {}, onPlay, onDetails, stag
                 loading="lazy"
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-indigo-950 via-slate-900 to-black flex flex-col items-center justify-center p-4 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-2">
+              <div className="w-full h-full bg-theme-surface flex flex-col items-center justify-center p-4 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-theme-card border border-theme-border flex items-center justify-center mb-2">
                   <Film className="w-6 h-6 text-theme-accent" />
                 </div>
                 <span className="text-xs text-theme-muted font-medium line-clamp-1">{cleanTitle}</span>
@@ -93,7 +93,7 @@ export default function MediaCard({ item, metadata = {}, onPlay, onDetails, stag
 
             {/* Scrim y Botón Play al hover */}
             <div
-              className={`absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center transition-opacity duration-300 ${
+              className={`absolute inset-0 bg-black/70 flex items-center justify-center transition-opacity duration-300 ${
                 isHovered && !isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'
               }`}
             >
@@ -105,12 +105,12 @@ export default function MediaCard({ item, metadata = {}, onPlay, onDetails, stag
             {/* Badges de calidad y formato */}
             <div className="absolute top-2.5 right-2.5 flex flex-wrap gap-1 z-10">
               {ext && (
-                <span className="px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[10px] font-bold text-slate-200 border border-white/10 uppercase tracking-wide">
+                <span className="px-2 py-0.5 rounded-md bg-theme-surface text-[10px] font-bold text-slate-200 border border-theme-border uppercase tracking-wide">
                   {ext}
                 </span>
               )}
               {badges.filter(b => b === '1080P' || b === '720P' || b === '4K').map(b => (
-                <span key={b} className="px-1.5 py-0.5 rounded-md bg-theme-accent/90 text-white text-[10px] font-bold shadow-sm">
+                <span key={b} className="px-1.5 py-0.5 rounded-md bg-theme-accent text-white text-[10px] font-bold shadow-sm">
                   {b}
                 </span>
               ))}
@@ -118,7 +118,7 @@ export default function MediaCard({ item, metadata = {}, onPlay, onDetails, stag
 
             {item.humanSize && (
               <div className="absolute bottom-2.5 left-2.5 z-10">
-                <span className="px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[10px] font-mono text-slate-300 border border-white/10">
+                <span className="px-2 py-0.5 rounded-md bg-theme-surface text-[10px] font-mono text-slate-300 border border-theme-border">
                   {item.humanSize}
                 </span>
               </div>
@@ -170,7 +170,7 @@ export default function MediaCard({ item, metadata = {}, onPlay, onDetails, stag
         </div>
 
         {/* ================= CARA TRASERA (3D FLIP 180°) ================= */}
-        <div className="flip-card-back mask-card flex flex-col justify-between glass border border-theme-accent/40 p-5 bg-[#14151c] text-theme-text">
+        <div className="flip-card-back mask-card flex flex-col justify-between border border-theme-border p-5 bg-theme-surface text-theme-text">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-theme-border/60">
               <div className="flex items-center gap-2">

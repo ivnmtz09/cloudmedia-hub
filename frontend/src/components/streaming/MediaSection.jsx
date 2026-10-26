@@ -65,7 +65,7 @@ export default function MediaSection({ title, icon: Icon, items = [], metadata =
               <button
                 onClick={() => scroll('left')}
                 aria-label="Desplazar a la izquierda"
-                className="min-h-10 min-w-10 flex items-center justify-center rounded-xl glass hover:bg-white/10 text-theme-muted hover:text-theme-text transition-colors focus-ring"
+                className="min-h-10 min-w-10 flex items-center justify-center rounded-xl bg-theme-surface hover:bg-theme-card text-theme-muted hover:text-theme-text transition-colors border border-theme-border focus-ring"
                 title="Anterior"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -73,7 +73,7 @@ export default function MediaSection({ title, icon: Icon, items = [], metadata =
               <button
                 onClick={() => scroll('right')}
                 aria-label="Desplazar a la derecha"
-                className="min-h-10 min-w-10 flex items-center justify-center rounded-xl glass hover:bg-white/10 text-theme-muted hover:text-theme-text transition-colors focus-ring"
+                className="min-h-10 min-w-10 flex items-center justify-center rounded-xl bg-theme-surface hover:bg-theme-card text-theme-muted hover:text-theme-text transition-colors border border-theme-border focus-ring"
                 title="Siguiente"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -107,7 +107,7 @@ export default function MediaSection({ title, icon: Icon, items = [], metadata =
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-theme-border/60 p-8 text-center glass">
+        <div className="rounded-2xl border border-dashed border-theme-border p-8 text-center bg-theme-surface">
           <Film className="w-10 h-10 text-theme-muted mx-auto mb-3" />
           <p className="text-sm text-theme-muted font-medium mb-1">No hay videos en {title} aún</p>
           <p className="text-xs text-theme-muted mb-4">

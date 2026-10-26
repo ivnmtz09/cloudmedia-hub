@@ -100,7 +100,7 @@ export function UsersPanel({ onToast }) {
   return (
     <div className="space-y-6 animate-fade-in text-theme-text max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl glass border border-white/10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-theme-surface border border-theme-border">
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-xl bg-theme-accent/15 text-theme-accent border border-theme-accent/20">
             <Users className="w-6 h-6" />
@@ -125,7 +125,7 @@ export function UsersPanel({ onToast }) {
       </div>
 
       {/* Users Table */}
-      <div className="rounded-2xl glass border border-white/10 overflow-hidden">
+      <div className="rounded-2xl bg-theme-surface border border-theme-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-white/5 border-b border-theme-border/60 text-theme-muted font-semibold uppercase tracking-wider">
@@ -205,8 +205,8 @@ export function UsersPanel({ onToast }) {
 
       {/* Modal Nuevo Usuario */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl glass p-6 border border-white/10 shadow-2xl animate-scale-in text-theme-text">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-theme-surface p-6 border border-theme-border shadow-2xl animate-scale-in text-theme-text">
             <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
               <h2 className="text-base font-semibold">Crear Nuevo Usuario</h2>
               <button
@@ -282,8 +282,8 @@ export function UsersPanel({ onToast }) {
 
       {/* Modal Editar Usuario */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl glass p-6 border border-white/10 shadow-2xl animate-scale-in text-theme-text">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-theme-surface p-6 border border-theme-border shadow-2xl animate-scale-in text-theme-text">
             <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
               <h2 className="text-base font-semibold">Editar {editingUser.username}</h2>
               <button

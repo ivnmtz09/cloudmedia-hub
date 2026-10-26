@@ -88,7 +88,7 @@ export default function FileItem({
     return (
       <div
         onClick={handlePrimaryClick}
-        className="group relative rounded-2xl glass-card p-4 hover:border-brand-500/40 hover:shadow-glow-red transition-all duration-200 cursor-pointer flex flex-col justify-between"
+        className="group relative rounded-2xl bg-theme-card border border-theme-border p-4 hover:border-theme-accent hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between"
       >
         <div className="flex items-start justify-between mb-3">
           <div className="p-2.5 rounded-xl bg-dark-900 border border-slate-800/80 group-hover:scale-110 transition-transform">

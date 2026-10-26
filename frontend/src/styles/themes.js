@@ -1,104 +1,104 @@
 export const THEMES = {
-  'alfacode-obsidian': {
-    id: 'alfacode-obsidian',
-    name: 'AlfaCode Obsidian',
-    description: 'Modo oscuro profundo por defecto',
+  'redflix': {
+    id: 'redflix',
+    name: 'Redflix',
+    platform: 'Netflix',
+    description: 'Negro carbón absoluto con rojo emblemático',
     colors: {
-      bg: '#0a0a0f',
-      surface: '#111118',
-      card: '#16161f',
-      border: '#1e1e2e',
-      accent: '#6366f1', // Indigo vibrante
-      accentHover: '#818cf8',
-      accentGlow: '99, 102, 241',
-      text: '#e2e8f0',
-      textMuted: '#64748b',
+      bg: '#141414',
+      surface: '#1a1a1a',
+      card: '#1f1f1f',
+      border: '#2d2d2d',
+      accent: '#E50914',
+      accentHover: '#f40612',
+      accentGlow: '229, 9, 20',
+      text: '#ffffff',
+      textMuted: '#a3a3a3',
       success: '#10b981',
       warning: '#f59e0b',
-      error: '#ef4444',
-      glassColor: '22, 22, 31'
+      error: '#E50914'
     }
   },
-  'cinema-crimson': {
-    id: 'cinema-crimson',
-    name: 'Cinema Crimson',
-    description: 'Rojo cinematográfico premium',
+  'magic-plus': {
+    id: 'magic-plus',
+    name: 'Magic Plus',
+    platform: 'Disney+',
+    description: 'Azul medianoche profundo y azul eléctrico / cian',
     colors: {
-      bg: '#0c0a0a',
-      surface: '#130f0f',
-      card: '#1a1212',
-      border: '#2a1a1a',
-      accent: '#dc2626', // Crimson rojo
-      accentHover: '#ef4444',
-      accentGlow: '220, 38, 38',
-      text: '#fef2f2',
-      textMuted: '#7f6060',
+      bg: '#0d1b2a',
+      surface: '#1b263b',
+      card: '#223049',
+      border: '#2e4161',
+      accent: '#0072d2',
+      accentHover: '#0086f8',
+      accentGlow: '0, 114, 210',
+      text: '#f1f5f9',
+      textMuted: '#8ea2be',
       success: '#10b981',
       warning: '#f59e0b',
-      error: '#b91c1c',
-      glassColor: '26, 18, 18'
+      error: '#ef4444'
     }
   },
-  'cyber-violet': {
-    id: 'cyber-violet',
-    name: 'Cyber Violet',
-    description: 'Violeta cyberpunk futurista',
+  'anime-studio': {
+    id: 'anime-studio',
+    name: 'Anime Studio',
+    platform: 'Crunchyroll',
+    description: 'Gris grafito oscuro con acento naranja vibrante',
     colors: {
-      bg: '#08070f',
-      surface: '#0f0d1a',
-      card: '#14111f',
-      border: '#1e1a2e',
-      accent: '#a855f7', // Violeta neon
-      accentHover: '#c084fc',
-      accentGlow: '168, 85, 247',
-      text: '#f5f3ff',
-      textMuted: '#6d5f8a',
+      bg: '#0f0f0f',
+      surface: '#161616',
+      card: '#1a1a1a',
+      border: '#2a2a2a',
+      accent: '#F47521',
+      accentHover: '#ff8838',
+      accentGlow: '244, 117, 33',
+      text: '#fafafa',
+      textMuted: '#949494',
       success: '#10b981',
       warning: '#f59e0b',
-      error: '#ef4444',
-      glassColor: '20, 17, 31'
+      error: '#ef4444'
     }
   },
-  'emerald-terminal': {
-    id: 'emerald-terminal',
-    name: 'Emerald Terminal',
-    description: 'Verde esmeralda terminal',
+  'max-cinema': {
+    id: 'max-cinema',
+    name: 'Max Cinema',
+    platform: 'Max / HBO',
+    description: 'Azul medianoche oscuro con acento púrpura neón',
     colors: {
-      bg: '#050f09',
-      surface: '#071510',
-      card: '#0a1f15',
-      border: '#0f2d1e',
-      accent: '#10b981', // Emerald hacker
-      accentHover: '#34d399',
-      accentGlow: '16, 185, 129',
-      text: '#ecfdf5',
-      textMuted: '#3d6e56',
-      success: '#34d399',
+      bg: '#080b11',
+      surface: '#0e131e',
+      card: '#121826',
+      border: '#1e273d',
+      accent: '#7C3AED',
+      accentHover: '#8b5cf6',
+      accentGlow: '124, 58, 237',
+      text: '#f8fafc',
+      textMuted: '#8592a6',
+      success: '#10b981',
       warning: '#f59e0b',
-      error: '#ef4444',
-      glassColor: '10, 31, 21'
+      error: '#ef4444'
     }
   },
-  'daylight-studio': {
-    id: 'daylight-studio',
-    name: 'Daylight Studio',
-    description: 'Tema claro editorial limpio',
+  'prime-vision': {
+    id: 'prime-vision',
+    name: 'Prime Vision',
+    platform: 'Prime Video',
+    description: 'Azul carbón institucional y cian corporativo',
     colors: {
-      bg: '#f8fafc',
-      surface: '#f1f5f9',
-      card: '#ffffff',
-      border: '#e2e8f0',
-      accent: '#4f46e5',
-      accentHover: '#4338ca',
-      accentGlow: '79, 70, 229',
-      text: '#0f172a',
-      textMuted: '#64748b',
-      success: '#059669',
-      warning: '#d97706',
-      error: '#dc2626',
-      glassColor: '255, 255, 255'
+      bg: '#0f172a',
+      surface: '#172033',
+      card: '#1e293b',
+      border: '#29384f',
+      accent: '#00a8e1',
+      accentHover: '#1ac0f8',
+      accentGlow: '0, 168, 225',
+      text: '#f8fafc',
+      textMuted: '#94a3b8',
+      success: '#10b981',
+      warning: '#f59e0b',
+      error: '#ef4444'
     }
   }
 };
 
-export const DEFAULT_THEME = 'alfacode-obsidian';
+export const DEFAULT_THEME = 'redflix';

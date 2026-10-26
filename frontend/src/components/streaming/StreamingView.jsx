@@ -206,7 +206,7 @@ export default function StreamingView({ onGoToExplorer, addToast }) {
                   <div
                     key={item.path || idx}
                     onClick={() => setActiveMedia(item)}
-                    className="group relative rounded-xl glass border border-white/10 overflow-hidden cursor-pointer hover:border-theme-accent/50 card-glow transition-all"
+                    className="group relative rounded-xl bg-theme-card border border-theme-border overflow-hidden cursor-pointer hover:border-theme-accent card-glow transition-all"
                   >
                     <div className="aspect-video bg-black/40 flex items-center justify-center relative overflow-hidden">
                       {item.posterUrl ? (
