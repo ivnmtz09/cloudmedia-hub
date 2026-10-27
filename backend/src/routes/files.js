@@ -10,6 +10,7 @@ import {
   deleteItem,
   uploadMiddleware
 } from '../services/filesService.js';
+import { enrichDirectoryItems } from '../services/metadataEnricher.js';
 
 const router = express.Router();
 
@@ -18,6 +19,8 @@ router.get('/', authGuard, roleGuard(['viewer']), async (req, res) => {
   try {
     const targetPath = req.query.path || '';
     const result = await listFiles(targetPath);
+    // Auto-enriquecimiento de medios con Gemini y TMDB
+    result.items = await enrichDirectoryItems(result.items, targetPath);
     res.json(result);
   } catch (error) {
     console.error('Error listing files:', error);

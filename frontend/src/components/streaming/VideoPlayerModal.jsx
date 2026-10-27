@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Play, Pause, Square, Volume2, Volume1, VolumeX, Maximize, Minimize, X,
-  RotateCcw, RotateCw, Music2, Subtitles, Check, Loader2, SkipForward,
+  Play, Pause, Square, Volume2, VolumeX, Maximize, Minimize, X,
+  RotateCcw, RotateCw, Music2, Subtitles, Check, SkipForward,
   Info, Volume as VolumeIcon, Minimize2, Maximize2
 } from 'lucide-react';
 import { fetchMediaInfo, getStreamUrl, getSubtitleUrl, saveWatchProgress } from '../../services/api';
@@ -11,7 +11,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
   const { currentTheme } = useTheme();
   const accentColor = currentTheme?.colors?.accent || '#E50914';
-  const surfaceColor = currentTheme?.colors?.surface || '#1a1a1a';
+  const surfaceColor = currentTheme?.colors?.surface || '#141414';
   const cardColor = currentTheme?.colors?.card || '#1f1f1f';
   const borderColor = currentTheme?.colors?.border || '#2d2d2d';
 
@@ -21,9 +21,11 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
   const gainNodeRef = useRef(null);
   const sourceNodeRef = useRef(null);
 
-  const hideControlsTimer = useRef(null);
-  const osdTimer = useRef(null);
-  const lastSavedRef = useRef(0);
+  const idleTimerRef = useRef(null);
+  const osdTimerRef = useRef(null);
+  const lastSavedBackendRef = useRef(0);
+  const lastLocalSavedTimeRef = useRef(0);
+  const hasRestoredProgressRef = useRef(false);
   const lastTapRef = useRef(0);
 
   // Playback state
@@ -33,12 +35,12 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
   const [timeOffset, setTimeOffset] = useState(0); // Para seeking con ffmpeg -ss
   const [isBuffering, setIsBuffering] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isMiniMode, setIsMiniMode] = useState(false); // Modo miniatura / ventana flotante
-  const [showControls, setShowControls] = useState(true);
+  const [isMiniMode, setIsMiniMode] = useState(false);
+  const [isIdle, setIsIdle] = useState(false); // Inactividad del usuario
   const [showRemainingTime, setShowRemainingTime] = useState(false);
 
   // Volume: 0.0 a 2.0 (0% a 200%)
-  const [volume, setVolume] = useState(1.0); // 1.0 = 100%
+  const [volume, setVolume] = useState(1.0);
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(1.0);
   const [showMobileVolumeSlider, setShowMobileVolumeSlider] = useState(false);
@@ -57,17 +59,56 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
   const [isLoadingInfo, setIsLoadingInfo] = useState(true);
 
   const isMkv = item?.path ? item.path.toLowerCase().endsWith('.mkv') : false;
+  const progressStorageKey = item?.path ? `cloudmedia_progress_${item.path}` : null;
 
-  // 1. Mostrar OSD temporal estilo VLC
+  // 1. OSD Temporal estilo VLC
   const triggerOsd = useCallback((title, value = null, type = 'volume') => {
     setOsdMessage({ title, value, type });
-    if (osdTimer.current) clearTimeout(osdTimer.current);
-    osdTimer.current = setTimeout(() => {
+    if (osdTimerRef.current) clearTimeout(osdTimerRef.current);
+    osdTimerRef.current = setTimeout(() => {
       setOsdMessage(null);
     }, 1800);
   }, []);
 
-  // 2. Inicializar Web Audio API solo si se requiere amplificación superior al 100% (hasta 200%)
+  // 2. Control de Inactividad (isIdle) con timeout de 2.8 segundos
+  const resetIdleTimer = useCallback(() => {
+    setIsIdle(false);
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+    }
+    idleTimerRef.current = setTimeout(() => {
+      setIsIdle(true);
+      setShowAudioMenu(false);
+      setShowSubtitleMenu(false);
+      setShowMobileVolumeSlider(false);
+    }, 2800);
+  }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const onUserActivity = () => {
+      resetIdleTimer();
+    };
+
+    container.addEventListener('mousemove', onUserActivity);
+    container.addEventListener('pointermove', onUserActivity);
+    container.addEventListener('touchstart', onUserActivity, { passive: true });
+    container.addEventListener('keydown', onUserActivity);
+
+    resetIdleTimer();
+
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      container.removeEventListener('mousemove', onUserActivity);
+      container.removeEventListener('pointermove', onUserActivity);
+      container.removeEventListener('touchstart', onUserActivity);
+      container.removeEventListener('keydown', onUserActivity);
+    };
+  }, [resetIdleTimer]);
+
+  // 3. Web Audio API para amplificación de volumen VLC hasta 200%
   const initWebAudio = useCallback(() => {
     if (!videoRef.current) return;
     if (audioCtxRef.current) {
@@ -94,11 +135,10 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
         }
       }
     } catch (err) {
-      console.warn('Web Audio API no pudo inicializarse (usando audio nativo):', err.message);
+      console.warn('Web Audio API fallback (usando audio nativo):', err.message);
     }
   }, [volume, isMuted]);
 
-  // Actualizar GainNode y volumen nativo
   useEffect(() => {
     const targetGain = isMuted ? 0 : volume;
     if (gainNodeRef.current) {
@@ -110,7 +150,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
     }
   }, [volume, isMuted]);
 
-  // 3. Sincronizar estado de Pantalla Completa nativo del navegador
+  // 4. Sincronizar estado de Pantalla Completa nativo en el documento
   useEffect(() => {
     const handleFullscreenChange = () => {
       const isFs = !!(
@@ -120,9 +160,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
         document.msFullscreenElement
       );
       setIsFullscreen(isFs);
-      if (isFs) {
-        setIsMiniMode(false);
-      }
+      if (isFs) setIsMiniMode(false);
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -138,7 +176,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
     };
   }, []);
 
-  // 4. Cargar metadatos exactos de ffprobe (duración y pistas)
+  // 5. Cargar metadatos técnicos (duración, audio y subtítulos)
   useEffect(() => {
     let isCancelled = false;
     if (item?.path) {
@@ -177,15 +215,30 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
     };
   }, [item?.path]);
 
-  // 5. Guardar progreso de visualización cada 5s
+  // 6. Guardar progreso de visualización local (localStorage) y remoto (backend)
+  const saveLocalProgress = useCallback((seconds) => {
+    if (!progressStorageKey || isNaN(seconds) || seconds < 0) return;
+    try {
+      // Si el video está casi terminado (más del 95% o últimos 25s), limpiamos el progreso
+      if (totalDuration > 0 && (seconds / totalDuration > 0.95 || totalDuration - seconds < 25)) {
+        localStorage.removeItem(progressStorageKey);
+      } else if (seconds > 3) {
+        localStorage.setItem(progressStorageKey, seconds.toString());
+      }
+    } catch (e) {
+      console.warn('Error guardando progreso local:', e);
+    }
+  }, [progressStorageKey, totalDuration]);
+
+  // Sincronización en backend cada 5s
   useEffect(() => {
     if (!isPlaying || !item?.path) return;
     const interval = setInterval(() => {
       const v = videoRef.current;
       if (v) {
         const computedTime = timeOffset + v.currentTime;
-        if (Math.abs(computedTime - lastSavedRef.current) >= 4) {
-          lastSavedRef.current = computedTime;
+        if (Math.abs(computedTime - lastSavedBackendRef.current) >= 4) {
+          lastSavedBackendRef.current = computedTime;
           saveWatchProgress({
             path: item.path,
             currentTime: computedTime,
@@ -200,15 +253,69 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
     return () => clearInterval(interval);
   }, [isPlaying, item?.path, timeOffset, totalDuration, item?.season, item?.episode]);
 
-  // 6. Manejo del tiempo con compensación de offset
+  // Guardar progreso al desmontar el reproductor
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        const effectiveTime = timeOffset + videoRef.current.currentTime;
+        saveLocalProgress(effectiveTime);
+      }
+    };
+  }, [saveLocalProgress, timeOffset]);
+
+  // 7. Evento onLoadedMetadata: Reanudar desde localStorage automáticamente
+  const handleLoadedMetadata = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.duration && !totalDuration) {
+      setTotalDuration(video.duration);
+    }
+
+    if (!hasRestoredProgressRef.current && progressStorageKey) {
+      try {
+        const savedTimeStr = localStorage.getItem(progressStorageKey);
+        if (savedTimeStr) {
+          const savedTime = parseFloat(savedTimeStr);
+          if (!isNaN(savedTime) && savedTime > 3) {
+            hasRestoredProgressRef.current = true;
+            if (!isMkv) {
+              video.currentTime = savedTime;
+              setCurrentTime(savedTime);
+            } else {
+              seekTo(savedTime);
+            }
+            triggerOsd('Continuar Viendo', formatTime(savedTime), 'seek');
+          }
+        }
+      } catch (err) {
+        console.warn('Error leyendo progreso guardado de localStorage:', err);
+      }
+    }
+  };
+
+  // 8. Evento onTimeUpdate: Actualiza el estado y guarda en localStorage cada 2s
   const handleTimeUpdate = () => {
     const video = videoRef.current;
     if (!video) return;
     const effectiveTime = Math.min(timeOffset + video.currentTime, totalDuration || Infinity);
     setCurrentTime(effectiveTime);
+
+    if (Math.abs(effectiveTime - lastLocalSavedTimeRef.current) >= 2) {
+      lastLocalSavedTimeRef.current = effectiveTime;
+      saveLocalProgress(effectiveTime);
+    }
   };
 
-  // 7. Seeking preciso
+  const handlePause = () => {
+    setIsPlaying(false);
+    if (videoRef.current) {
+      const effectiveTime = timeOffset + videoRef.current.currentTime;
+      saveLocalProgress(effectiveTime);
+    }
+  };
+
+  // 9. Seeking preciso (soporta remuxing ffmpeg con timeOffset)
   const seekTo = (targetSeconds) => {
     const video = videoRef.current;
     if (!video) return;
@@ -241,48 +348,35 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
       setCurrentTime(clampedTarget);
     }
 
-    triggerOsd(
-      'Salto de tiempo',
-      formatTime(clampedTarget),
-      'seek'
-    );
+    saveLocalProgress(clampedTarget);
+    triggerOsd('Salto de tiempo', formatTime(clampedTarget), 'seek');
   };
 
   const seekRelative = (seconds) => {
     seekTo(currentTime + seconds);
   };
 
-  // 8. Control de Volumen VLC (hasta 200%)
+  // 10. Control de Volumen VLC (hasta 200%)
   const changeVolume = (delta) => {
     let newVol = Math.round((volume + delta) * 100) / 100;
-    newVol = Math.max(0, Math.min(newVol, 2.0)); // 0% a 200%
-    if (newVol > 1.0) {
-      initWebAudio();
-    }
+    newVol = Math.max(0, Math.min(newVol, 2.0));
+    if (newVol > 1.0) initWebAudio();
 
     setVolume(newVol);
-    if (newVol > 0 && isMuted) {
-      setIsMuted(false);
-    }
+    if (newVol > 0 && isMuted) setIsMuted(false);
     triggerOsd('Volumen', Math.round(newVol * 100), 'volume');
   };
 
   const setVolumeDirect = (val) => {
     const clamped = Math.max(0, Math.min(val, 2.0));
-    if (clamped > 1.0) {
-      initWebAudio();
-    }
+    if (clamped > 1.0) initWebAudio();
     setVolume(clamped);
-    if (clamped > 0 && isMuted) {
-      setIsMuted(false);
-    }
+    if (clamped > 0 && isMuted) setIsMuted(false);
     triggerOsd('Volumen', Math.round(clamped * 100), 'volume');
   };
 
   const toggleMute = () => {
-    if (volume > 1.0) {
-      initWebAudio();
-    }
+    if (volume > 1.0) initWebAudio();
     if (isMuted) {
       setIsMuted(false);
       triggerOsd('Volumen', Math.round((previousVolume || 1.0) * 100), 'volume');
@@ -293,14 +387,13 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
     }
   };
 
-  // 9. Rueda del ratón para volumen
   const handleWheel = (e) => {
     e.preventDefault();
     const step = e.deltaY < 0 ? 0.05 : -0.05;
     changeVolume(step);
   };
 
-  // 10. Alternar Pantalla Completa Real que cubre 100% de la pantalla
+  // 11. PANTALLA COMPLETA REAL: Aplicada al div CONTENEDOR principal (containerRef), NO a la etiqueta <video>
   const toggleFullscreen = async () => {
     const container = containerRef.current;
     const video = videoRef.current;
@@ -316,6 +409,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
     try {
       if (!isCurrentlyFs) {
         setIsMiniMode(false);
+        // Solicitamos fullscreen al contenedor para que los controles se mantengan superpuestos
         if (container.requestFullscreen) {
           await container.requestFullscreen();
         } else if (container.webkitRequestFullscreen) {
@@ -325,6 +419,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
         } else if (container.msRequestFullscreen) {
           await container.msRequestFullscreen();
         } else if (video && video.webkitEnterFullscreen) {
+          // Fallback exclusivo para Safari iOS
           video.webkitEnterFullscreen();
         }
         setIsFullscreen(true);
@@ -340,20 +435,17 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
           await document.msExitFullscreen();
         }
         setIsFullscreen(false);
-        triggerOsd('Vista Ventana', null, 'minimize');
+        triggerOsd('Vista Normal', null, 'minimize');
       }
     } catch (err) {
-      console.warn('Error alternando fullscreen nativo, aplicando fullscreen de ventana:', err);
+      console.warn('Fullscreen alternado en modo ventana:', err);
       setIsFullscreen(!isCurrentlyFs);
     }
   };
 
-  // 11. Alternar Modo Miniatura Flotante
   const toggleMiniMode = () => {
     if (isFullscreen) {
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {});
-      }
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
       setIsFullscreen(false);
     }
     setIsMiniMode((prev) => !prev);
@@ -400,9 +492,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
         setShowSubtitleMenu((prev) => !prev);
       } else if (e.key === 'Escape') {
         if (isFullscreen) {
-          if (document.fullscreenElement) {
-            document.exitFullscreen().catch(() => {});
-          }
+          if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
           setIsFullscreen(false);
         } else if (isMiniMode) {
           setIsMiniMode(false);
@@ -416,26 +506,10 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentTime, volume, isMuted, isFullscreen, isMiniMode, isPlaying, totalDuration]);
 
-  // 13. Auto-hide controls
-  const handleUserActivity = () => {
-    setShowControls(true);
-    if (hideControlsTimer.current) clearTimeout(hideControlsTimer.current);
-    hideControlsTimer.current = setTimeout(() => {
-      if (isPlaying) {
-        setShowControls(false);
-        setShowAudioMenu(false);
-        setShowSubtitleMenu(false);
-        setShowMobileVolumeSlider(false);
-      }
-    }, 3500);
-  };
-
   const togglePlay = () => {
     const video = videoRef.current;
     if (!video) return;
-    if (volume > 1.0) {
-      initWebAudio();
-    }
+    if (volume > 1.0) initWebAudio();
 
     if (video.paused) {
       video.play().then(() => {
@@ -458,7 +532,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
     triggerOsd('Detenido', null, 'stop');
   };
 
-  // Doble toque en móvil: izquierda retrocede, derecha adelanta
+  // Toques en pantalla en dispositivos móviles
   const handleVideoTouch = (e) => {
     const now = Date.now();
     const rect = e.currentTarget.getBoundingClientRect();
@@ -467,9 +541,9 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
 
     if (isDoubleTap) {
       const clickRatio = (touchX - rect.left) / rect.width;
-      if (clickRatio < 0.4) {
+      if (clickRatio < 0.35) {
         seekRelative(-10);
-      } else if (clickRatio > 0.6) {
+      } else if (clickRatio > 0.65) {
         seekRelative(10);
       } else {
         togglePlay();
@@ -477,11 +551,15 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
       lastTapRef.current = 0;
     } else {
       lastTapRef.current = now;
-      handleUserActivity();
+      // Alternar visibilidad de controles en móvil
+      if (isIdle) {
+        resetIdleTimer();
+      } else {
+        setIsIdle(true);
+      }
     }
   };
 
-  // Formato de tiempo VLC: HH:MM:SS o MM:SS
   const formatTime = (seconds) => {
     if (isNaN(seconds) || seconds < 0) return '00:00';
     const totalSec = Math.floor(seconds);
@@ -494,16 +572,11 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Color de volumen VLC adaptado al tema actual
   const volumePercentage = Math.round((isMuted ? 0 : volume) * 100);
   let volumeHex = accentColor;
-  if (volumePercentage > 150) {
-    volumeHex = '#ef4444'; // Rojo sobreamplificación extrema
-  } else if (volumePercentage > 100) {
-    volumeHex = '#f59e0b'; // Ámbar sobreamplificación
-  }
+  if (volumePercentage > 150) volumeHex = '#ef4444';
+  else if (volumePercentage > 100) volumeHex = '#f59e0b';
 
-  // Selección de pista de audio
   const handleSelectAudioTrack = (idx) => {
     setSelectedTrackIndex(idx);
     setShowAudioMenu(false);
@@ -515,7 +588,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
   const streamSrc = getStreamUrl(item.path, selectedTrackIndex, isMkv, timeOffset);
   const remainingSeconds = Math.max(0, (totalDuration || 0) - currentTime);
 
-  // Sincronizar estado de las pistas de subtítulos en el elemento de video
+  // Subtítulos
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -524,92 +597,79 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
       if (!video.textTracks || video.textTracks.length === 0) return;
       for (let i = 0; i < video.textTracks.length; i++) {
         const track = video.textTracks[i];
-        if (selectedSubtitleIndex >= 0) {
-          track.mode = 'showing';
-        } else {
-          track.mode = 'disabled';
-        }
+        track.mode = selectedSubtitleIndex >= 0 ? 'showing' : 'disabled';
       }
     };
 
     syncTracks();
     video.addEventListener('loadeddata', syncTracks);
-    return () => {
-      video.removeEventListener('loadeddata', syncTracks);
-    };
+    return () => video.removeEventListener('loadeddata', syncTracks);
   }, [selectedSubtitleIndex, timeOffset, isMkv]);
 
-  // Bloquear scroll de la página cuando no está en mini mode
   useEffect(() => {
     if (!isMiniMode) {
       const orig = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       containerRef.current?.focus();
-      return () => {
-        document.body.style.overflow = orig;
-      };
+      return () => { document.body.style.overflow = orig; };
     }
   }, [isMiniMode]);
 
-  // ================= RENDERIZADO CON PORTAL =================
   return createPortal(
     <div
       className={`fixed inset-0 z-[99999] flex items-center justify-center transition-all ${
         isMiniMode ? 'pointer-events-none' : ''
-      } ${isFullscreen ? 'p-0' : 'p-0 sm:p-3 md:p-6'}`}
+      } ${isFullscreen ? 'p-0 bg-black' : 'p-0 sm:p-3 md:p-6'}`}
     >
-      {/* Backdrop oscuro con desenfoque (oculto en modo miniatura) */}
+      {/* Backdrop */}
       {!isMiniMode && (
         <div
-          className="fixed inset-0 bg-black/85 backdrop-blur-md transition-all duration-300 animate-fade-in"
+          className="fixed inset-0 bg-black/90 backdrop-blur-md transition-all duration-300"
           onClick={isFullscreen ? undefined : onClose}
           aria-hidden="true"
         />
       )}
 
-      {/* Contenedor del Reproductor */}
+      {/* ================= CONTENEDOR PRINCIPAL DEL REPRODUCTOR (WRAPPER FULLSCREEN) ================= */}
       <div
         ref={containerRef}
         role="dialog"
         aria-modal={!isMiniMode}
-        aria-label={`Reproductor VLC: ${item.title || item.name}`}
+        aria-label={`Reproductor: ${item.title || item.name}`}
         tabIndex={0}
-        onMouseMove={handleUserActivity}
-        onTouchStart={handleUserActivity}
         onWheel={handleWheel}
-        className={`relative z-10 flex flex-col justify-between bg-black select-none overflow-hidden outline-none transition-all duration-200 pointer-events-auto ${
+        className={`relative z-10 flex flex-col justify-between bg-black select-none overflow-hidden outline-none pointer-events-auto transition-all duration-300 ${
+          isIdle ? 'cursor-none' : 'cursor-default'
+        } ${
           isFullscreen
             ? 'w-screen h-screen max-w-none max-h-none rounded-none border-0 shadow-none'
             : isMiniMode
-            ? 'fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-80 sm:w-96 aspect-video rounded-2xl border-2 shadow-2xl z-[99999] animate-scale-in'
-            : 'w-full h-full sm:h-auto sm:max-w-4xl lg:max-w-5xl sm:aspect-video sm:max-h-[84vh] rounded-none sm:rounded-3xl border sm:border-theme-border shadow-2xl animate-dolly-zoom'
+            ? 'fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-80 sm:w-96 aspect-video rounded-2xl border-2 shadow-2xl z-[99999]'
+            : 'w-full h-full sm:h-auto sm:max-w-4xl lg:max-w-5xl sm:aspect-video sm:max-h-[86vh] rounded-none sm:rounded-3xl border sm:border-slate-800 shadow-2xl'
         }`}
         style={isMiniMode ? { borderColor: accentColor } : undefined}
       >
         {/* ================= BARRA SUPERIOR VLC ================= */}
         {!isMiniMode && (
           <div
-            className={`absolute top-0 left-0 right-0 z-30 px-3 sm:px-4 py-3 bg-gradient-to-b from-black/95 via-black/60 to-transparent transition-opacity duration-300 flex items-center justify-between pt-[max(0.75rem,env(safe-area-inset-top))] ${
-              showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            className={`absolute top-0 left-0 right-0 z-30 px-3 sm:px-5 py-3 sm:py-4 bg-gradient-to-b from-black/95 via-black/70 to-transparent transition-opacity duration-300 flex items-center justify-between pt-[max(0.75rem,env(safe-area-inset-top))] ${
+              isIdle ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
             }`}
           >
-            {/* Título y badge VLC */}
+            {/* Título y Badge */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 pr-2">
-              <div className="flex items-center gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded bg-[#1e2029] border border-[#323642] text-[10px] sm:text-[11px] font-mono text-slate-300 shrink-0">
-                <span
-                  className="w-2 h-2 rounded-full animate-pulse"
-                  style={{ backgroundColor: accentColor }}
-                />
-                <span>VLC Engine</span>
-                {isMkv && <span className="font-bold ml-1" style={{ color: accentColor }}>MKV Remux</span>}
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/90 border border-slate-700 text-[10px] sm:text-[11px] font-mono text-slate-200 shrink-0 shadow-md">
+                <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: accentColor }} />
+                <span className="font-bold">CloudMedia</span>
+                {isMkv && <span className="font-bold ml-1 text-red-400">MKV</span>}
               </div>
 
               <div className="min-w-0">
-                <h2 className="text-xs sm:text-sm font-semibold text-white tracking-wide truncate max-w-[45vw] sm:max-w-md md:max-w-xl">
+                <h2 className="text-xs sm:text-sm font-bold text-white tracking-wide truncate max-w-[42vw] sm:max-w-md md:max-w-xl drop-shadow">
                   {item.title || item.name}
                 </h2>
                 {mediaInfo && (
-                  <div className="hidden sm:flex items-center gap-2 text-[10px] sm:text-[11px] text-slate-400 mt-0.5 font-mono">
+                  <div className="hidden sm:flex items-center gap-2 text-[10px] text-slate-400 font-mono">
                     <span>{mediaInfo.video?.width}x{mediaInfo.video?.height}</span>
                     <span>•</span>
                     <span>{mediaInfo.video?.codec?.toUpperCase()}</span>
@@ -620,36 +680,33 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
               </div>
             </div>
 
-            {/* Botones de Cabecera: Miniatura & Cerrar */}
+            {/* Acciones de Cabecera */}
             <div className="flex items-center gap-1.5 shrink-0">
-              {/* Botón Modo Miniatura / Preview */}
               <button
                 type="button"
                 onClick={toggleMiniMode}
-                aria-label="Ver en miniatura"
-                title="Modo miniatura flotante"
-                className="min-h-10 min-w-10 flex items-center justify-center rounded-xl bg-black/60 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+                aria-label="Modo miniatura"
+                className="min-h-11 min-w-11 flex items-center justify-center rounded-xl bg-black/60 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+                title="Miniatura flotante"
               >
                 <Minimize2 className="w-4 h-4" />
               </button>
 
-              {/* Botón Pantalla Completa */}
               <button
                 type="button"
                 onClick={toggleFullscreen}
                 aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+                className="min-h-11 min-w-11 flex items-center justify-center rounded-xl bg-black/60 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
                 title="Pantalla completa (F)"
-                className="min-h-10 min-w-10 flex items-center justify-center rounded-xl bg-black/60 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
               >
                 {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
               </button>
 
-              {/* Botón cerrar */}
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Cerrar reproductor"
-                className="min-h-10 min-w-10 flex items-center justify-center rounded-xl bg-black/60 hover:bg-white/10 text-slate-300 hover:text-white transition-colors focus-ring"
+                className="min-h-11 min-w-11 flex items-center justify-center rounded-xl bg-black/60 hover:bg-red-600 text-slate-300 hover:text-white transition-colors shadow-lg"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -657,28 +714,18 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
           </div>
         )}
 
-        {/* ================= OVERLAY MINIATURA (SI isMiniMode ESTÁ ACTIVO) ================= */}
+        {/* ================= OVERLAY MODO MINIATURA ================= */}
         {isMiniMode && (
-          <div className="absolute inset-0 z-30 bg-black/40 hover:bg-black/60 transition-colors flex flex-col justify-between p-2 group">
+          <div className="absolute inset-0 z-30 bg-black/40 hover:bg-black/60 transition-colors flex flex-col justify-between p-3 group">
             <div className="flex items-center justify-between text-white">
-              <span className="text-[11px] font-medium truncate max-w-[180px] drop-shadow">
+              <span className="text-xs font-semibold truncate max-w-[190px] drop-shadow">
                 {item.title || item.name}
               </span>
               <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={toggleMiniMode}
-                  title="Restaurar a ventana normal"
-                  className="p-1 rounded-lg bg-black/70 hover:bg-white/20 text-white transition-colors"
-                >
+                <button type="button" onClick={toggleMiniMode} className="p-1.5 rounded-lg bg-black/70 hover:bg-white/20 text-white">
                   <Maximize2 className="w-3.5 h-3.5" />
                 </button>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label="Cerrar reproductor"
-                  className="p-1 rounded-lg bg-black/70 hover:bg-red-600 text-white transition-colors"
-                >
+                <button type="button" onClick={onClose} className="p-1.5 rounded-lg bg-black/70 hover:bg-red-600 text-white">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -688,71 +735,42 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
               <button
                 type="button"
                 onClick={togglePlay}
-                className="p-2.5 rounded-full text-white shadow-xl transform scale-90 group-hover:scale-100 transition-all"
-                style={{ backgroundColor: accentColor }}
+                className="p-3 rounded-full text-white shadow-xl bg-red-600 hover:bg-red-700 transition-all"
               >
                 {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
               </button>
             </div>
 
-            <div className="w-full bg-slate-800/80 h-1 rounded-full overflow-hidden">
+            <div className="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden">
               <div
-                className="h-full"
-                style={{
-                  width: `${totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0}%`,
-                  backgroundColor: accentColor
-                }}
+                className="h-full bg-red-600"
+                style={{ width: `${totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0}%` }}
               />
             </div>
           </div>
         )}
 
-        {/* ================= OSD SUPERIOR DERECHO (ESTILO VLC) ================= */}
+        {/* ================= OSD NOTIFICACIÓN ESTILO VLC ================= */}
         {osdMessage && !isMiniMode && (
           <div className="absolute top-16 right-4 sm:top-20 sm:right-6 z-40 animate-fade-in pointer-events-none">
-            <div className="flex items-center gap-3 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-[#141414]/95 border border-[#353847] shadow-2xl backdrop-blur-md">
+            <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-black/95 border border-slate-700 shadow-2xl backdrop-blur-md">
               <div
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0"
                 style={{ backgroundColor: volumeHex + '25', color: volumeHex }}
               >
-                {osdMessage.type === 'play' ? (
-                  <Play className="w-4 h-4 fill-current" />
-                ) : osdMessage.type === 'pause' ? (
-                  <Pause className="w-4 h-4 fill-current" />
-                ) : osdMessage.type === 'stop' ? (
-                  <Square className="w-4 h-4 fill-current" />
-                ) : osdMessage.type === 'audio' ? (
-                  <Music2 className="w-4 h-4" />
-                ) : osdMessage.type === 'subtitle' ? (
-                  <Subtitles className="w-4 h-4" />
-                ) : osdMessage.type === 'volume' ? (
-                  <VolumeIcon className="w-4 h-4" />
-                ) : osdMessage.type === 'seek' ? (
-                  <RotateCw className="w-4 h-4" />
-                ) : (
-                  <Info className="w-4 h-4" />
-                )}
+                {osdMessage.type === 'play' ? <Play className="w-4 h-4 fill-current" /> :
+                 osdMessage.type === 'pause' ? <Pause className="w-4 h-4 fill-current" /> :
+                 osdMessage.type === 'stop' ? <Square className="w-4 h-4 fill-current" /> :
+                 osdMessage.type === 'audio' ? <Music2 className="w-4 h-4" /> :
+                 osdMessage.type === 'subtitle' ? <Subtitles className="w-4 h-4" /> :
+                 osdMessage.type === 'volume' ? <VolumeIcon className="w-4 h-4" /> :
+                 osdMessage.type === 'seek' ? <RotateCw className="w-4 h-4" /> : <Info className="w-4 h-4" />}
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-                  {osdMessage.title}
-                </div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">{osdMessage.title}</div>
                 {osdMessage.value !== null && (
-                  <div className="text-xs sm:text-sm font-mono font-bold text-white flex items-center gap-2">
-                    <span>
-                      {osdMessage.type === 'volume' ? `${osdMessage.value}%` : osdMessage.value}
-                    </span>
-                    {osdMessage.type === 'volume' && (
-                      <div className="w-16 sm:w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full transition-all duration-150"
-                          style={{
-                            width: `${Math.min(100, (osdMessage.value / 200) * 100)}%`,
-                            backgroundColor: volumeHex
-                          }}
-                        />
-                      </div>
-                    )}
+                  <div className="text-xs sm:text-sm font-mono font-black text-white flex items-center gap-2">
+                    <span>{osdMessage.type === 'volume' ? `${osdMessage.value}%` : osdMessage.value}</span>
                   </div>
                 )}
               </div>
@@ -760,28 +778,30 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
           </div>
         )}
 
-        {/* ================= ÁREA DE VIDEO & CONTROLES CENTRALES ================= */}
+        {/* ================= ÁREA DE VIDEO & ELEMENTO HTML5 ================= */}
         <div
           onClick={handleVideoTouch}
           onDoubleClick={toggleFullscreen}
-          className="relative flex-1 flex items-center justify-center cursor-pointer bg-black overflow-hidden"
+          className="relative flex-1 w-full h-full flex items-center justify-center bg-black overflow-hidden"
         >
+          {/* ETIQUETA VIDEO NATIVA CON CLASES SOLICITADAS: w-full h-full object-contain bg-black */}
           <video
             ref={videoRef}
             crossOrigin="anonymous"
             src={streamSrc}
+            onLoadedMetadata={handleLoadedMetadata}
             onTimeUpdate={handleTimeUpdate}
             onWaiting={() => setIsBuffering(true)}
             onPlaying={() => {
               setIsBuffering(false);
               setIsPlaying(true);
             }}
-            onPause={() => setIsPlaying(false)}
+            onPause={handlePause}
             onEnded={() => {
               setIsPlaying(false);
               if (onNextEpisode) onNextEpisode();
             }}
-            className="w-full h-full object-contain max-h-screen"
+            className="w-full h-full object-contain bg-black"
             playsInline
             webkit-playsinline="true"
           >
@@ -797,59 +817,51 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
             )}
           </video>
 
-          {/* Spinner de buffering con el color de acento del tema activo */}
+          {/* Buffering Spinner */}
           {isBuffering && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/60 pointer-events-none z-20">
               <div
-                className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-4 border-t-transparent animate-spin"
-                style={{
-                  borderColor: `${accentColor}30`,
-                  borderTopColor: accentColor
-                }}
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-4 border-t-transparent animate-spin"
+                style={{ borderColor: `${accentColor}30`, borderTopColor: accentColor }}
               />
             </div>
           )}
 
-          {/* CONTROLES CENTRALES TÁCTILES GRANDES (Móvil y Tablet) */}
-          {!isMiniMode && showControls && (
+          {/* CONTROLES TÁCTILES CENTRALES (Adelantar/Retroceder/Play) */}
+          {!isMiniMode && (
             <div
-              className="absolute inset-0 z-20 flex items-center justify-center gap-6 sm:gap-10 pointer-events-auto transition-opacity"
+              className={`absolute inset-0 z-20 flex items-center justify-center gap-6 sm:gap-10 pointer-events-auto transition-opacity duration-300 ease-in-out ${
+                isIdle ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+              }`}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Retroceder 10s */}
               <button
                 type="button"
                 onClick={() => seekRelative(-10)}
                 aria-label="Retroceder 10 segundos"
-                className="w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-transform active:scale-90 border border-white/10"
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-transform active:scale-90 border border-white/10 shadow-lg"
               >
                 <RotateCcw className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
 
-              {/* Botón Central Play / Pause Grande */}
               <button
                 type="button"
                 onClick={togglePlay}
                 aria-label={isPlaying ? 'Pausar' : 'Reproducir'}
-                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full text-white flex items-center justify-center shadow-2xl transition-transform active:scale-90"
-                style={{
-                  backgroundColor: accentColor,
-                  boxShadow: `0 0 25px ${accentColor}80`
-                }}
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full text-white flex items-center justify-center shadow-2xl transition-transform active:scale-95 bg-red-600 hover:bg-red-700 shadow-red-600/50"
               >
                 {isPlaying ? (
-                  <Pause className="w-7 h-7 sm:w-8 sm:h-8 fill-current" />
+                  <Pause className="w-8 h-8 sm:w-10 sm:h-10 fill-current" />
                 ) : (
-                  <Play className="w-7 h-7 sm:w-8 sm:h-8 fill-current ml-1" />
+                  <Play className="w-8 h-8 sm:w-10 sm:h-10 fill-current ml-1" />
                 )}
               </button>
 
-              {/* Adelantar 10s */}
               <button
                 type="button"
                 onClick={() => seekRelative(10)}
                 aria-label="Adelantar 10 segundos"
-                className="w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-transform active:scale-90 border border-white/10"
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-transform active:scale-90 border border-white/10 shadow-lg"
               >
                 <RotateCw className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
@@ -860,14 +872,14 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
         {/* ================= BARRA INFERIOR DE CONTROLES VLC ================= */}
         {!isMiniMode && (
           <div
-            className={`relative z-30 border-t transition-opacity duration-300 p-2.5 sm:p-4 text-slate-200 pb-[max(0.75rem,env(safe-area-inset-bottom))] ${
-              showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            className={`relative z-30 border-t transition-opacity duration-300 ease-in-out p-3 sm:p-5 text-slate-200 pb-[max(0.75rem,env(safe-area-inset-bottom))] ${
+              isIdle ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
             }`}
             style={{ backgroundColor: surfaceColor, borderColor }}
           >
-            {/* 1. BARRA DE PROGRESO CON TIME SCRUBBING */}
-            <div className="space-y-1 mb-2">
-              <div className="relative group/progress flex items-center">
+            {/* 1. Scrubbing Bar de Progreso Adaptada a Móvil */}
+            <div className="space-y-1.5 mb-2.5">
+              <div className="relative group/progress flex items-center py-1">
                 <input
                   type="range"
                   min="0"
@@ -875,7 +887,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                   step="0.5"
                   value={currentTime}
                   onChange={(e) => seekTo(parseFloat(e.target.value))}
-                  className="w-full h-2 sm:h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer hover:h-2.5 transition-all"
+                  className="w-full h-2.5 sm:h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer hover:h-3 transition-all"
                   style={{
                     accentColor: accentColor,
                     background: `linear-gradient(to right, ${accentColor} 0%, ${accentColor} ${
@@ -887,16 +899,15 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                 />
               </div>
 
-              {/* Display de tiempos estilo VLC */}
+              {/* Tiempos */}
               <div className="flex items-center justify-between text-xs font-mono text-slate-400">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-white font-semibold">{formatTime(currentTime)}</span>
+                  <span className="text-white font-bold">{formatTime(currentTime)}</span>
                   <span>/</span>
                   <button
                     type="button"
                     onClick={() => setShowRemainingTime(!showRemainingTime)}
-                    title="Alternar entre tiempo total y tiempo restante"
-                    className="hover:text-white transition-colors rounded px-1"
+                    className="hover:text-white transition-colors"
                   >
                     {showRemainingTime ? `-${formatTime(remainingSeconds)}` : formatTime(totalDuration)}
                   </button>
@@ -904,104 +915,70 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
 
                 <div className="flex items-center gap-2 text-[11px] text-slate-400">
                   {audioTracks[selectedTrackIndex] && (
-                    <span className="truncate max-w-[140px] sm:max-w-none">
-                      Audio: {audioTracks[selectedTrackIndex].language?.toUpperCase() || 'Pista 1'} ({audioTracks[selectedTrackIndex].codec?.toUpperCase() || 'AAC'})
+                    <span className="truncate max-w-[130px] sm:max-w-none">
+                      {audioTracks[selectedTrackIndex].language?.toUpperCase() || 'Audio'} ({audioTracks[selectedTrackIndex].codec?.toUpperCase() || 'AAC'})
                     </span>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* 2. BOTONERA DE CONTROLES RESPONSIVA */}
-            <div className="flex items-center justify-between gap-1 sm:gap-3 pt-1">
-              {/* LADO IZQUIERDO: Transport Controls */}
+            {/* 2. Botonera Responsiva con Targets Táctiles de 44px */}
+            <div className="flex items-center justify-between gap-1 sm:gap-3">
+              {/* Controles de Transporte */}
               <div className="flex items-center gap-1 sm:gap-2">
-                {/* Play / Pause */}
                 <button
                   type="button"
                   onClick={togglePlay}
                   aria-label={isPlaying ? 'Pausar' : 'Reproducir'}
-                  className="min-h-10 min-w-10 sm:min-h-11 sm:min-w-11 flex items-center justify-center rounded-xl text-white shadow-md transition-transform active:scale-95 focus-ring"
-                  style={{
-                    backgroundColor: accentColor,
-                    boxShadow: `0 2px 10px ${accentColor}40`
-                  }}
+                  className="min-h-11 min-w-11 flex items-center justify-center rounded-xl text-white shadow-md transition-transform active:scale-95 bg-red-600 hover:bg-red-700"
                 >
-                  {isPlaying ? <Pause className="w-4 h-4 sm:w-5 sm:h-5 fill-current" /> : <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current ml-0.5" />}
+                  {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
                 </button>
 
-                {/* Stop */}
                 <button
                   type="button"
                   onClick={handleStop}
                   aria-label="Detener"
-                  title="Detener reproducción"
-                  className="min-h-10 min-w-10 sm:min-h-11 sm:min-w-11 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+                  className="min-h-11 min-w-11 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
                 >
-                  <Square className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" />
+                  <Square className="w-4 h-4 fill-current" />
                 </button>
 
-                {/* Retroceder / Adelantar 10s (visibles en tablets y PC) */}
-                <button
-                  type="button"
-                  onClick={() => seekRelative(-10)}
-                  aria-label="Retroceder 10 segundos"
-                  className="hidden md:flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => seekRelative(10)}
-                  aria-label="Adelantar 10 segundos"
-                  className="hidden md:flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
-                >
-                  <RotateCw className="w-4 h-4" />
-                </button>
-
-                {/* Siguiente episodio */}
                 {onNextEpisode && (
                   <button
                     type="button"
                     onClick={onNextEpisode}
                     aria-label="Siguiente episodio"
-                    title="Reproducir siguiente episodio"
-                    className="min-h-10 px-2.5 sm:min-h-11 sm:px-3 flex items-center gap-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors text-xs font-semibold"
+                    className="min-h-11 px-3 flex items-center gap-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors text-xs font-bold"
                   >
-                    <SkipForward className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: accentColor }} />
+                    <SkipForward className="w-4 h-4 text-red-500" />
                     <span className="hidden sm:inline">Siguiente</span>
                   </button>
                 )}
               </div>
 
-              {/* CENTRO: CONTROL DE VOLUMEN VLC HASTA 200% */}
+              {/* Control de Volumen VLC (Desktop) */}
               <div
-                className="hidden sm:flex items-center gap-2 sm:gap-3 px-3 py-1.5 rounded-xl border"
+                className="hidden sm:flex items-center gap-3 px-3.5 py-1.5 rounded-xl border"
                 style={{ backgroundColor: cardColor, borderColor }}
               >
-                {/* Mute Button */}
                 <button
                   type="button"
                   onClick={toggleMute}
                   aria-label={isMuted ? 'Activar sonido' : 'Silenciar'}
-                  className="min-h-8 min-w-8 flex items-center justify-center text-slate-300 hover:text-white transition-colors rounded-lg"
+                  className="min-h-8 min-w-8 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
                 >
-                  {isMuted || volume === 0 ? (
-                    <VolumeX className="w-4 h-4 text-red-400" />
-                  ) : (
-                    <Volume2 className="w-4 h-4" style={{ color: volumeHex }} />
-                  )}
+                  {isMuted || volume === 0 ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4" style={{ color: volumeHex }} />}
                 </button>
 
-                {/* Indicador Triangular de Volumen VLC */}
+                {/* Gráfico de Barras VLC hasta 200% */}
                 <div
-                  title="Volumen VLC hasta 200% (Clic o rueda del ratón)"
+                  title="Volumen VLC hasta 200%"
                   className="flex items-end gap-[3px] h-6 cursor-pointer py-1 px-1"
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
-                    const clickX = e.clientX - rect.left;
-                    const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+                    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
                     setVolumeDirect(ratio * 2.0);
                   }}
                 >
@@ -1009,62 +986,40 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                     const barThreshold = ((i + 1) / 12) * 2.0;
                     const isActive = (isMuted ? 0 : volume) >= barThreshold - 0.08;
                     const barHeightPct = 25 + (i / 11) * 75;
-
                     let barStyle = { backgroundColor: '#334155' };
                     if (isActive) {
-                      if (barThreshold > 1.5) {
-                        barStyle = { backgroundColor: '#ef4444' };
-                      } else if (barThreshold > 1.0) {
-                        barStyle = { backgroundColor: '#f59e0b' };
-                      } else {
-                        barStyle = { backgroundColor: accentColor };
-                      }
+                      barStyle = { backgroundColor: barThreshold > 1.5 ? '#ef4444' : barThreshold > 1.0 ? '#f59e0b' : accentColor };
                     }
-
                     return (
                       <div
                         key={i}
-                        className="w-[4px] sm:w-[5px] rounded-t-sm transition-all duration-100"
+                        className="w-[5px] rounded-t-sm transition-all duration-100"
                         style={{ height: `${barHeightPct}%`, ...barStyle }}
                       />
                     );
                   })}
                 </div>
 
-                {/* Porcentaje numérico */}
-                <span
-                  className="font-mono text-xs font-bold min-w-[42px] text-right transition-colors"
-                  style={{ color: volumeHex }}
-                >
+                <span className="font-mono text-xs font-bold min-w-[42px] text-right" style={{ color: volumeHex }}>
                   {volumePercentage}%
                 </span>
               </div>
 
-              {/* Botón de Volumen Compacto para Móviles (< 640px) */}
+              {/* Botón de Volumen para Móviles */}
               <div className="relative sm:hidden">
                 <button
                   type="button"
                   onClick={() => setShowMobileVolumeSlider((prev) => !prev)}
-                  aria-label={isMuted ? 'Activar sonido' : 'Ajustar volumen'}
-                  className="min-h-10 min-w-10 flex items-center justify-center rounded-xl bg-white/5 text-slate-300 hover:text-white"
+                  className="min-h-11 min-w-11 flex items-center justify-center rounded-xl bg-white/5 text-slate-300"
                 >
-                  {isMuted || volume === 0 ? (
-                    <VolumeX className="w-4 h-4 text-red-400" />
-                  ) : (
-                    <Volume2 className="w-4 h-4" style={{ color: volumeHex }} />
-                  )}
+                  {isMuted || volume === 0 ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4" style={{ color: volumeHex }} />}
                 </button>
 
                 {showMobileVolumeSlider && (
                   <div
-                    className="absolute bottom-12 left-0 p-3 rounded-xl border shadow-2xl flex items-center gap-3 z-50 w-48 animate-scale-in"
-                    style={{ backgroundColor: cardColor, borderColor }}
+                    className="absolute bottom-14 left-0 p-3 rounded-2xl border shadow-2xl flex items-center gap-3 z-50 w-52 bg-slate-900 border-slate-700"
                   >
-                    <button
-                      type="button"
-                      onClick={toggleMute}
-                      className="p-1 rounded text-slate-300"
-                    >
+                    <button type="button" onClick={toggleMute} className="p-1 text-slate-300">
                       {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4" />}
                     </button>
                     <input
@@ -1074,19 +1029,19 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                       step="0.05"
                       value={isMuted ? 0 : volume}
                       onChange={(e) => setVolumeDirect(parseFloat(e.target.value))}
-                      className="w-full h-1.5 rounded-lg appearance-none bg-slate-800"
+                      className="w-full h-2 rounded-lg bg-slate-800"
                       style={{ accentColor }}
                     />
-                    <span className="font-mono text-[10px] font-bold text-white shrink-0">
+                    <span className="font-mono text-xs font-bold text-white shrink-0">
                       {volumePercentage}%
                     </span>
                   </div>
                 )}
               </div>
 
-              {/* LADO DERECHO: Pistas de Audio, Subtítulos y Pantalla Completa */}
-              <div className="flex items-center gap-1 sm:gap-2">
-                {/* Selector de Pistas de Audio */}
+              {/* Audio, Subtítulos y Pantalla Completa */}
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                {/* Selector de Audio */}
                 <div className="relative">
                   <button
                     type="button"
@@ -1096,26 +1051,16 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                       setShowMobileVolumeSlider(false);
                     }}
                     aria-label="Pistas de audio"
-                    title="Pistas de audio (S)"
-                    className="min-h-10 min-w-10 sm:min-h-11 sm:min-w-11 flex items-center justify-center rounded-xl border transition-colors focus-ring"
-                    style={
-                      showAudioMenu
-                        ? { backgroundColor: `${accentColor}25`, borderColor: `${accentColor}50`, color: accentColor }
-                        : { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.05)', color: '#cbd5e1' }
-                    }
+                    className="min-h-11 min-w-11 flex items-center justify-center rounded-xl border transition-colors bg-white/5 hover:bg-white/10 text-slate-300 border-slate-800"
                   >
                     <Music2 className="w-4 h-4" />
                   </button>
 
                   {showAudioMenu && (
                     <div
-                      className="absolute bottom-full mb-2 right-0 w-60 sm:w-64 max-w-[85vw] max-h-56 overflow-y-auto rounded-2xl border shadow-2xl p-2 z-50 text-xs animate-scale-in"
-                      style={{ backgroundColor: cardColor, borderColor }}
+                      className="absolute bottom-full mb-3 right-0 sm:right-auto sm:left-0 w-64 max-w-[88vw] max-h-56 overflow-y-auto rounded-2xl border shadow-2xl p-2 z-50 text-xs bg-slate-900 border-slate-700"
                     >
-                      <div
-                        className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b mb-1"
-                        style={{ borderColor }}
-                      >
+                      <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800 mb-1">
                         Pistas de Audio VLC
                       </div>
                       {audioTracks.length > 0 ? (
@@ -1124,12 +1069,11 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                             key={track.index}
                             type="button"
                             onClick={() => handleSelectAudioTrack(track.index)}
-                            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors"
-                            style={
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors ${
                               selectedTrackIndex === track.index
-                                ? { backgroundColor: `${accentColor}25`, color: accentColor, fontWeight: '600' }
-                                : { color: '#cbd5e1' }
-                            }
+                                ? 'bg-red-600/20 text-red-400 font-bold'
+                                : 'text-slate-300 hover:bg-slate-800'
+                            }`}
                           >
                             <div className="min-w-0 pr-2">
                               <div className="truncate">{track.title || `Pista ${track.index + 1}`}</div>
@@ -1141,9 +1085,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                           </button>
                         ))
                       ) : (
-                        <div className="px-3 py-2 text-slate-400 text-[11px]">
-                          Pista estéreo predeterminada
-                        </div>
+                        <div className="px-3 py-2 text-slate-400 text-xs">Pista predeterminada</div>
                       )}
                     </div>
                   )}
@@ -1160,26 +1102,16 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                         setShowMobileVolumeSlider(false);
                       }}
                       aria-label="Subtítulos"
-                      title="Subtítulos (C)"
-                      className="min-h-10 min-w-10 sm:min-h-11 sm:min-w-11 flex items-center justify-center rounded-xl border transition-colors focus-ring"
-                      style={
-                        showSubtitleMenu
-                          ? { backgroundColor: `${accentColor}25`, borderColor: `${accentColor}50`, color: accentColor }
-                          : { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.05)', color: '#cbd5e1' }
-                      }
+                      className="min-h-11 min-w-11 flex items-center justify-center rounded-xl border transition-colors bg-white/5 hover:bg-white/10 text-slate-300 border-slate-800"
                     >
                       <Subtitles className="w-4 h-4" />
                     </button>
 
                     {showSubtitleMenu && (
                       <div
-                        className="absolute bottom-full mb-2 right-0 w-56 sm:w-60 max-w-[85vw] max-h-56 overflow-y-auto rounded-2xl border shadow-2xl p-2 z-50 text-xs animate-scale-in"
-                        style={{ backgroundColor: cardColor, borderColor }}
+                        className="absolute bottom-full mb-3 right-0 sm:right-auto sm:left-0 w-60 max-w-[88vw] max-h-56 overflow-y-auto rounded-2xl border shadow-2xl p-2 z-50 text-xs bg-slate-900 border-slate-700"
                       >
-                        <div
-                          className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b mb-1"
-                          style={{ borderColor }}
-                        >
+                        <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800 mb-1">
                           Subtítulos
                         </div>
                         <button
@@ -1189,12 +1121,9 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                             setShowSubtitleMenu(false);
                             triggerOsd('Subtítulos desactivados', null, 'subtitle');
                           }}
-                          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors"
-                          style={
-                            selectedSubtitleIndex === -1
-                              ? { backgroundColor: `${accentColor}25`, color: accentColor, fontWeight: '600' }
-                              : { color: '#cbd5e1' }
-                          }
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors ${
+                            selectedSubtitleIndex === -1 ? 'bg-red-600/20 text-red-400 font-bold' : 'text-slate-300 hover:bg-slate-800'
+                          }`}
                         >
                           <span>Desactivados</span>
                           {selectedSubtitleIndex === -1 && <Check className="w-3.5 h-3.5" />}
@@ -1209,18 +1138,13 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                               setShowSubtitleMenu(false);
                               triggerOsd(`Subtítulo: ${sub.title || sub.language}`, null, 'subtitle');
                             }}
-                            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors"
-                            style={
-                              selectedSubtitleIndex === sub.index
-                                ? { backgroundColor: `${accentColor}25`, color: accentColor, fontWeight: '600' }
-                                : { color: '#cbd5e1' }
-                            }
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors ${
+                              selectedSubtitleIndex === sub.index ? 'bg-red-600/20 text-red-400 font-bold' : 'text-slate-300 hover:bg-slate-800'
+                            }`}
                           >
                             <div className="min-w-0 pr-2">
                               <div className="truncate">{sub.title || `Subtítulo ${sub.index + 1}`}</div>
-                              <div className="text-[10px] text-slate-400 font-mono">
-                                {sub.language?.toUpperCase() || 'UND'}
-                              </div>
+                              <div className="text-[10px] text-slate-400 font-mono">{sub.language?.toUpperCase() || 'UND'}</div>
                             </div>
                             {selectedSubtitleIndex === sub.index && <Check className="w-3.5 h-3.5 shrink-0" />}
                           </button>
@@ -1230,13 +1154,12 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                   </div>
                 )}
 
-                {/* Botón Pantalla Completa (F) que cubre 100% de la pantalla */}
+                {/* Botón Pantalla Completa Real */}
                 <button
                   type="button"
                   onClick={toggleFullscreen}
                   aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
-                  title="Pantalla completa (F)"
-                  className="min-h-10 min-w-10 sm:min-h-11 sm:min-w-11 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors focus-ring"
+                  className="min-h-11 min-w-11 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
                 >
                   {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
                 </button>

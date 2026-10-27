@@ -422,6 +422,32 @@ export async function fetchMetadata(itemPath = null) {
   return data.metadata || data.item || {};
 }
 
+export async function fetchMediaItemMetadata(itemPath, name = '', isDir = false) {
+  const params = new URLSearchParams({ path: itemPath });
+  if (name) params.set('name', name);
+  if (isDir) params.set('isDir', 'true');
+  const res = await apiFetch(`${API_BASE}/api/metadata/item?${params.toString()}`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.metadata || null;
+}
+
+// ================= AI CHAT (GEMINI + TMDB + SEARCH) =================
+export async function sendChatMessage(message, history = []) {
+  const res = await apiFetch(`${API_BASE}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, history })
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Error al comunicarse con CloudMedia AI');
+  }
+
+  return await res.json();
+}
+
 export async function syncMetadata() {
   const res = await apiFetch(`${API_BASE}/api/movies/sync-metadata`, {
     method: 'POST'

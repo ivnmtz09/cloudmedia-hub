@@ -2,79 +2,296 @@
   "Peliculas/Batman La máscara del fantasma 1080p DUAL 1.20 GB.mkv": {
     "path": "Peliculas/Batman La máscara del fantasma 1080p DUAL 1.20 GB.mkv",
     "filename": "Batman La máscara del fantasma 1080p DUAL 1.20 GB.mkv",
-    "cleanTitle": "Batman La máscara del fantasma",
-    "badges": [
-      "1080P",
-      "DUAL",
-      "1.20 GB",
-      "MKV"
+    "title": "Batman: La máscara del fantasma",
+    "cleanTitle": "Batman: Mask of the Phantasm",
+    "type": "pelicula",
+    "seasonNumber": null,
+    "synopsis": "Una enigmática figura fantasmal hace su aparición, cumpliendo las ejecuciones de determinadas figuras importantes del hampa. Simultáneamente regresa a Gotham una muchacha con la cual Bruce Wayne mantuvo un idilio; éste rememorará su relación con la chica y, de paso, su propio 'nacimiento' como Batman.",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/wZdRUZX624bTFo2drYrrBjoNL7Y.jpg",
+    "backdropUrl": "https://image.tmdb.org/t/p/original/cMUuAgVsMWOCawXonZ4D1dSMd6h.jpg",
+    "poster_path": "/wZdRUZX624bTFo2drYrrBjoNL7Y.jpg",
+    "backdrop_path": "/cMUuAgVsMWOCawXonZ4D1dSMd6h.jpg",
+    "genres": [
+      "Animación",
+      "Crimen",
+      "Misterio"
     ],
-    "season": null,
-    "episode": null,
-    "title": "Batman: la máscara del fantasma",
-    "synopsis": "Batman: La máscara del fantasma es una película de animación estadounidense de 1993 protagonizada por Batman; superhéroe de la editorial DC Comics, inspirada en la serie de televisión Batman: la serie animada. Al igual que en la serie, la cinta es protagonizada por Kevin Conroy como la voz de Batman. El guion de la película fue escrito por Paul Dini, Michael Reaves y Martin Pasko; producida por Alan Burnett y dirigida por Bruce Timm y Eric Radomsky y distribuida por Warner Bros. Originalmente fue pensada para ser distribuida directamente para vídeo, pero después de ver el producto final, la Warner decidió estrenarla en los cines norteamericanos, posponiendo su lanzamiento en vídeo. La máscara del fantasma recibió muchos elogios de la crítica por su animación, diálogos y actuación; pero fue un rotundo fracaso en taquilla debido a su corto tiempo de proyección en los cinemas. En el extranjero, no llegó a estrenarse en los cines, distribuyéndose en formato VHS.",
-    "posterUrl": "/api/metadata/poster?slug=batman-la-mascara-del-fantasma",
-    "year": null,
-    "score": null,
+    "actors": [
+      {
+        "name": "Kevin Conroy",
+        "character": "Batman (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/zvWhAwO2l8Kb5IJTwTbKzURypg7.jpg"
+      },
+      {
+        "name": "Dana Delany",
+        "character": "Andrea Beaumont (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/sUzs7I87K4wSvLD7TjoYH6avRrL.jpg"
+      },
+      {
+        "name": "Hart Bochner",
+        "character": "Arthur Reeves (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/nfC2ByTNS3xoygwYVbUYsx2Zae6.jpg"
+      },
+      {
+        "name": "Stacy Keach",
+        "character": "Phantasm (voice) / Carl Beaumont (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/gtYepb7Vu9bXcdZ62PXm56KalNl.jpg"
+      },
+      {
+        "name": "Abe Vigoda",
+        "character": "Salvatore Valestra (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/luWKPNb58IgJ2ovrtgPAzHGLLYL.jpg"
+      },
+      {
+        "name": "Dick Miller",
+        "character": "Chuckie Sol (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/zyQXh8BkLg0DDo23pxJN2dy6Bqj.jpg"
+      },
+      {
+        "name": "John P. Ryan",
+        "character": "Buzz Bronski (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/6WV5Sv2YnFG0W1rVnxOxpLyIFUM.jpg"
+      },
+      {
+        "name": "Efrem Zimbalist Jr.",
+        "character": "Alfred (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/d1xwCJUtKxddiO3r1WAZQehd0is.jpg"
+      },
+      {
+        "name": "Bob Hastings",
+        "character": "Commissioner Gordon (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/j8Bcul6PCSDOwY4tl2wLkcelgYf.jpg"
+      },
+      {
+        "name": "Robert Costanzo",
+        "character": "Detective Bullock (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/vyUeNk56Yv7xyHztgVa8UBEIasu.jpg"
+      }
+    ],
+    "year": 1993,
+    "rating": 7.5,
     "category": "Peliculas",
-    "updatedAt": "2026-10-26T00:20:26.100Z"
+    "updatedAt": "2026-10-27T16:26:09.163Z"
   },
   "Peliculas/Hijo de Batman 720p LAT 707.03 MB.mp4": {
     "path": "Peliculas/Hijo de Batman 720p LAT 707.03 MB.mp4",
     "filename": "Hijo de Batman 720p LAT 707.03 MB.mp4",
+    "title": "El Hijo de Batman",
     "cleanTitle": "Hijo de Batman",
-    "badges": [
-      "720P",
-      "LAT",
-      "707.03 MB",
-      "MP4"
+    "type": "pelicula",
+    "seasonNumber": null,
+    "synopsis": "Batman se entera de que tiene un hijo y que fue criado en secreto por el peligroso grupo de terroristas, Liga de los Asesinos.",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/kL7RsD6tVATFqWLNov7QsKg2GOT.jpg",
+    "backdropUrl": "https://image.tmdb.org/t/p/original/jYqOnJDPI7QD9cGbE6CwDTp1tID.jpg",
+    "poster_path": "/kL7RsD6tVATFqWLNov7QsKg2GOT.jpg",
+    "backdrop_path": "/jYqOnJDPI7QD9cGbE6CwDTp1tID.jpg",
+    "genres": [
+      "Animación",
+      "Acción",
+      "Aventura"
     ],
-    "season": null,
-    "episode": null,
-    "title": "Son of Batman",
-    "synopsis": "Son of Batman es una película de animación de 2014 basada en los personajes de DC Cómics, Batman y Robin. Esta es la tercera película del Universo de Películas Animadas de DC, y está basada en el arco argumental del 2006, Batman & Son.",
-    "posterUrl": null,
-    "year": null,
-    "score": null,
+    "actors": [
+      {
+        "name": "Jason O'Mara",
+        "character": "Bruce Wayne / Batman (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/9Cs9PD5pwUkFQPLmpp5e6wkFQoY.jpg"
+      },
+      {
+        "name": "Stuart Allan",
+        "character": "Robin / Damian Wayne (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/xCAGTIcgC7J6YCl2bviIADY8blp.jpg"
+      },
+      {
+        "name": "Thomas Gibson",
+        "character": "Slade Wilson / Deathstroke (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/cnTJvFNtQW3HqlBSwkXAgvjXDi2.jpg"
+      },
+      {
+        "name": "Morena Baccarin",
+        "character": "Talia al Ghul (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/4gyHyg6FJ1oFczOm5pmMkdEEo2J.jpg"
+      },
+      {
+        "name": "Giancarlo Esposito",
+        "character": "Ra's al Ghul (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/MJOo4QZgMAb3y8QzOUDVFQusQZ.jpg"
+      },
+      {
+        "name": "David McCallum",
+        "character": "Alfred Pennyworth (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/blpEToArrhcrYdRlQU6fJckUcuG.jpg"
+      },
+      {
+        "name": "Xander Berkeley",
+        "character": "Dr. Kirk Langstrom (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/oBoKGfngGGZmSVGFslphYjc23WO.jpg"
+      },
+      {
+        "name": "Sean Maher",
+        "character": "Nightwing / Dick Grayson (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/o7splcOIVAdbHnwohJOUAvXWVlk.jpg"
+      },
+      {
+        "name": "Dee Bradley Baker",
+        "character": "Man-Bat / Joker / Man-Bat Commando (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/9oFnToDZWp0I484s7Ua1EzNQQ2m.jpg"
+      },
+      {
+        "name": "Diane Michelle",
+        "character": "Francine (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/qvgZDy8sEvcUZXZCdeRXCacyzHY.jpg"
+      }
+    ],
+    "year": 2014,
+    "rating": 7.1,
     "category": "Peliculas",
-    "updatedAt": "2026-10-26T03:33:51.088Z"
+    "updatedAt": "2026-10-27T16:54:30.353Z"
   },
   "Peliculas/Justice League The Flashpoint Paradox HD 698.20 MB.mkv": {
     "path": "Peliculas/Justice League The Flashpoint Paradox HD 698.20 MB.mkv",
     "filename": "Justice League The Flashpoint Paradox HD 698.20 MB.mkv",
+    "title": "La Liga de la Justicia: La paradoja del tiempo",
     "cleanTitle": "Justice League The Flashpoint Paradox",
-    "badges": [
-      "698.20 MB",
-      "MKV"
+    "type": "pelicula",
+    "seasonNumber": null,
+    "synopsis": "Barry Allen despierta en una realidad alternativa, donde descubre que ningun héroe de la Liga de la Justicia existe, a excepción de Batman, Aquaman y Wonder Woman; estos dos últimos tienen una enorme guerra, incluso los Atlantes de Aquaman inundaron Europa y las Amazonas conquistaron Inglaterra.",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/jOIH3wCtz3y4DonPDoHqSz0VjDj.jpg",
+    "backdropUrl": "https://image.tmdb.org/t/p/original/35RYg50KXsenD4TrpZzzBm2X4cK.jpg",
+    "poster_path": "/jOIH3wCtz3y4DonPDoHqSz0VjDj.jpg",
+    "backdrop_path": "/35RYg50KXsenD4TrpZzzBm2X4cK.jpg",
+    "genres": [
+      "Animación",
+      "Acción",
+      "Ciencia ficción"
     ],
-    "season": null,
-    "episode": null,
-    "title": "Justice League: The Flashpoint Paradox",
-    "synopsis": "Justice League: The Flashpoint Paradox es una película estadounidense de animación para adultos y de superhéroes de 2013, dirigida por Jay Oliva y escrita por Jim Krieg. protagonizada por Flash. Es una adaptación de la serie crossover de cómics de 2011, Flashpoint, de Geoff Johns y Andy Kubert. La película está protagonizada por Justin Chambers como Barry Allen / Flash, C. Thomas Howell como Eobard Thawne / Flash Reverso, Michael B. Jordan como Víctor Stone / Cyborg, Kevin McKidd como Thomas Wayne / Batman y Cary Elwes como Orin / Arthur Curry / Aquaman. La película también cuenta con la participación de actores que repiten sus papeles de otras series animadas de DC, incluidos Kevin Conroy como Bruce Wayne / Batman, Nathan Fillion como Hal Jordan / Linterna Verde, Ron Perlman como Slade Wilson / Deathstroke, Dana Delany como Lois Lane, Vanessa Marshall como la Princesa Diana / Mujer Maravilla y Dee Bradley Baker como Etrigan el Demonio.",
-    "posterUrl": null,
-    "year": null,
-    "score": null,
+    "actors": [
+      {
+        "name": "Justin Chambers",
+        "character": "Flash / Barry Allen (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/5UGtBemc4GPaCWjCwVR3YYmIlzV.jpg"
+      },
+      {
+        "name": "C. Thomas Howell",
+        "character": "Professor Zoom / Thawne (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/739YbFWpAYyo9neHvBGThgmT4YH.jpg"
+      },
+      {
+        "name": "Michael B. Jordan",
+        "character": "Cyborg / Victor Stone (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/sMBpav8cK7t7Nk0yf4tuNOqNUyW.jpg"
+      },
+      {
+        "name": "Kevin McKidd",
+        "character": "Batman / Thomas Wayne (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/KtmEKOSehmQ35JfGjEjpqlypbP.jpg"
+      },
+      {
+        "name": "Dee Bradley Baker",
+        "character": "Etrigan (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/9oFnToDZWp0I484s7Ua1EzNQQ2m.jpg"
+      },
+      {
+        "name": "Steve Blum",
+        "character": "Lex Luthor (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/cpO0muunoigq1WHegeOEI1AIQAo.jpg"
+      },
+      {
+        "name": "Kevin Conroy",
+        "character": "Batman / Bruce Wayne (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/zvWhAwO2l8Kb5IJTwTbKzURypg7.jpg"
+      },
+      {
+        "name": "Sam Daly",
+        "character": "Superman (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/wbMoOwrmO8gxTaPSAp7Cur2Qokm.jpg"
+      },
+      {
+        "name": "Dana Delany",
+        "character": "Lois Lane (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/sUzs7I87K4wSvLD7TjoYH6avRrL.jpg"
+      },
+      {
+        "name": "Grey DeLisle",
+        "character": "Nora Allen (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/vrUHaXe1pG56yZkgH7Hs3LGRLTT.jpg"
+      }
+    ],
+    "year": 2013,
+    "rating": 7.9,
     "category": "Peliculas",
-    "updatedAt": "2026-10-26T03:33:51.449Z"
+    "updatedAt": "2026-10-27T16:54:44.403Z"
   },
   "Peliculas/Liga de la Justicia Guerra 1080p DUAL 2.50 GB.mkv": {
     "path": "Peliculas/Liga de la Justicia Guerra 1080p DUAL 2.50 GB.mkv",
     "filename": "Liga de la Justicia Guerra 1080p DUAL 2.50 GB.mkv",
-    "cleanTitle": "Liga de la Justicia Guerra",
-    "badges": [
-      "1080P",
-      "DUAL",
-      "2.50 GB",
-      "MKV"
+    "title": "La Liga De La Justicia: Guerra",
+    "cleanTitle": "Liga de la Justicia: Guerra",
+    "type": "pelicula",
+    "seasonNumber": null,
+    "synopsis": "El mundo está bajo ataque de una armada alienígena liderada por el poderoso Apokoliptian, Darkseid. Un grupo de superhéroes que consiste en Superman, Batman, Mujer Maravilla, El Flash, Linterna Verde, Cyborg y Shazam deben dejar de lado sus diferencias y reunirse para defender la Tierra.",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/vbxw3IEseLTOMNOUBk3JS6gibbK.jpg",
+    "backdropUrl": "https://image.tmdb.org/t/p/original/uD6AG36ykWAwKfSrLBuaVmpRC0.jpg",
+    "poster_path": "/vbxw3IEseLTOMNOUBk3JS6gibbK.jpg",
+    "backdrop_path": "/uD6AG36ykWAwKfSrLBuaVmpRC0.jpg",
+    "genres": [
+      "Animación",
+      "Acción"
     ],
-    "season": null,
-    "episode": null,
-    "title": "Liga de la Justicia Guerra",
-    "synopsis": "",
-    "posterUrl": null,
-    "year": null,
-    "score": null,
+    "actors": [
+      {
+        "name": "Michelle Monaghan",
+        "character": "Diana Prince / Wonder Woman (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/uK1qhSzKd9gkDh3p1H5e2PWMYyH.jpg"
+      },
+      {
+        "name": "Alan Tudyk",
+        "character": "Clark Kent / Superman (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/jUuUbPuMGonFT5E2pcs4alfqaCN.jpg"
+      },
+      {
+        "name": "Sean Astin",
+        "character": "Shazam (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/As3ctGUtBYmG4zj4Ifyrcqd71HP.jpg"
+      },
+      {
+        "name": "Shemar Moore",
+        "character": "Victor Stone / Cyborg (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/epkv0UiwrPfCK3c0sHemSMi2jeh.jpg"
+      },
+      {
+        "name": "Christopher Gorham",
+        "character": "Barry Allen / The Flash (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/dKFXHJ3KBJaeQ50udMdBEC0VFvI.jpg"
+      },
+      {
+        "name": "Justin Kirk",
+        "character": "Hal Jordan / Green Lantern (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/7zRJN1qkaGPhUoGoIEtZDsDY9e6.jpg"
+      },
+      {
+        "name": "Jason O'Mara",
+        "character": "Bruce Wayne / Batman (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/9Cs9PD5pwUkFQPLmpp5e6wkFQoY.jpg"
+      },
+      {
+        "name": "George Newbern",
+        "character": "Steve Trevor (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/1Xx0K3KGqxyIpL6o2eVQKui86jS.jpg"
+      },
+      {
+        "name": "Steve Blum",
+        "character": "Darkseid / Computer Voice / Ocean Master (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/cpO0muunoigq1WHegeOEI1AIQAo.jpg"
+      },
+      {
+        "name": "Zach Callison",
+        "character": "Billy Batson (voice)",
+        "profilePath": "https://image.tmdb.org/t/p/w185/xZ498fu7e34DNBDVNMAs4phMrdV.jpg"
+      }
+    ],
+    "year": 2014,
+    "rating": 7.4,
     "category": "Peliculas",
-    "updatedAt": "2026-10-26T03:33:51.889Z"
+    "updatedAt": "2026-10-27T16:54:30.421Z"
   }
 }

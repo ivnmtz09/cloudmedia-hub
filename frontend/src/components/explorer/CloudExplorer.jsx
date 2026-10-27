@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Folder, Film, Tv, Video, ShieldCheck, FileText, UploadCloud, FolderPlus,
   RefreshCw, LayoutGrid, List, Search, ArrowLeft, Loader2, Sparkles, HardDrive
@@ -10,6 +11,7 @@ import NewFolderModal from './NewFolderModal';
 import RenameModal from './RenameModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import VideoPlayerModal from '../streaming/VideoPlayerModal';
+import MediaDetailsView from './MediaDetailsView';
 import ClassifiedUploadModal from '../upload/ClassifiedUploadModal';
 import { fetchFiles } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -24,6 +26,7 @@ const QUICK_CATEGORIES = [
 ];
 
 export default function CloudExplorer({ addToast }) {
+  const navigate = useNavigate();
   const { hasMinRole } = useAuth();
   const [currentPath, setCurrentPath] = useState('');
   const [parentPath, setParentPath] = useState(null);
@@ -38,6 +41,7 @@ export default function CloudExplorer({ addToast }) {
   const [renamingItem, setRenamingItem] = useState(null);
   const [deletingItem, setDeletingItem] = useState(null);
   const [playingMedia, setPlayingMedia] = useState(null);
+  const [selectedMediaDetails, setSelectedMediaDetails] = useState(null);
 
   const loadDirectory = async (targetPath = currentPath) => {
     try {
@@ -60,6 +64,7 @@ export default function CloudExplorer({ addToast }) {
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    setSelectedMediaDetails(null);
     loadDirectory(currentPath);
   }, [currentPath]);
 
@@ -208,7 +213,7 @@ export default function CloudExplorer({ addToast }) {
                   viewMode="grid"
                   canManage={hasMinRole('admin')}
                   onOpenFolder={(path) => setCurrentPath(path)}
-                  onPlayMedia={(media) => setPlayingMedia(media)}
+                  onPlayMedia={(media) => navigate(`/media/${encodeURIComponent(media.path)}`)}
                   onRename={(target) => setRenamingItem(target)}
                   onDelete={(target) => setDeletingItem(target)}
                 />
@@ -234,7 +239,7 @@ export default function CloudExplorer({ addToast }) {
                       viewMode="list"
                       canManage={hasMinRole('admin')}
                       onOpenFolder={(path) => setCurrentPath(path)}
-                      onPlayMedia={(media) => setPlayingMedia(media)}
+                      onPlayMedia={(media) => navigate(`/media/${encodeURIComponent(media.path)}`)}
                       onRename={(target) => setRenamingItem(target)}
                       onDelete={(target) => setDeletingItem(target)}
                     />

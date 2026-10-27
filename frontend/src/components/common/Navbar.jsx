@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Film, HardDrive, FolderOpen, RefreshCw, Palette, Shield,
-  Search, Menu, X, User, LogOut, ChevronRight, Sliders
+  Search, Menu, X, User, LogOut, ChevronRight, Sparkles, MessageSquare
 } from 'lucide-react';
 import { CloudMediaLogo } from './CloudMediaLogo';
 import { ThemePanel } from './ThemePanel';
@@ -11,19 +12,18 @@ import { ProfileModal } from '../profile/ProfileModal';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Navbar({
-  activeTab,
-  setActiveTab,
   stats,
   isRefreshingStats,
   onRefreshStats,
   onOpenSearch,
   addToast
 }) {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isThemePanelOpen, setIsThemePanelOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const { user, logout, hasRole } = useAuth();
-  const tabsRef = useRef([]);
+  const { user, hasRole } = useAuth();
 
   const drivePercentage = stats?.googleDrive?.percentage ?? stats?.percentage ?? 0;
   const humanUsed = stats?.googleDrive?.human_used ?? stats?.human_used ?? '0 GB';
@@ -54,62 +54,36 @@ export default function Navbar({
 
   const canAccessStorage = user && (user.role === 'admin' || user.role === 'moderator');
 
-  const tabs = [
-    { id: 'streaming', label: 'Cine & Series', Icon: Film },
-    { id: 'explorer', label: 'Explorador', Icon: FolderOpen }
-  ];
-
-  if (canAccessStorage) {
-    tabs.push({ id: 'monitoring', label: 'Cuota & Limpieza', Icon: HardDrive });
-  }
-
-  if (hasRole('admin')) {
-    tabs.push({ id: 'users', label: 'Administración', Icon: Shield });
-  }
-
-  // Bottom navigation items (exactly 4 items, no redundant search button)
-  const bottomNavItems = [
+  const navLinks = [
     {
-      id: 'streaming',
-      label: 'Cine',
+      to: '/',
+      label: 'Cine & Series',
       Icon: Film,
-      action: () => setActiveTab('streaming'),
-      isActive: activeTab === 'streaming'
+      isActive: location.pathname === '/' || location.pathname.startsWith('/media')
     },
     {
-      id: 'explorer',
-      label: 'Archivos',
+      to: '/explorer',
+      label: 'Explorador',
       Icon: FolderOpen,
-      action: () => setActiveTab('explorer'),
-      isActive: activeTab === 'explorer'
+      isActive: location.pathname.startsWith('/explorer')
     }
   ];
 
   if (canAccessStorage) {
-    bottomNavItems.push({
-      id: 'monitoring',
-      label: 'Cuota',
+    navLinks.push({
+      to: '/quotas',
+      label: 'Cuota & Limpieza',
       Icon: HardDrive,
-      action: () => setActiveTab('monitoring'),
-      isActive: activeTab === 'monitoring'
+      isActive: location.pathname.startsWith('/quotas')
     });
   }
 
   if (hasRole('admin')) {
-    bottomNavItems.push({
-      id: 'users',
-      label: 'Admin',
+    navLinks.push({
+      to: '/admin',
+      label: 'Administración',
       Icon: Shield,
-      action: () => setActiveTab('users'),
-      isActive: activeTab === 'users'
-    });
-  } else {
-    bottomNavItems.push({
-      id: 'menu',
-      label: 'Menú',
-      Icon: Menu,
-      action: () => setIsMobileMenuOpen(true),
-      isActive: isMobileMenuOpen
+      isActive: location.pathname.startsWith('/admin')
     });
   }
 
@@ -121,20 +95,6 @@ export default function Navbar({
     quotaAccent = '#f59e0b';
   }
 
-  function handleTabKeyDown(e, index) {
-    if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      const next = (index + 1) % tabs.length;
-      tabsRef.current[next]?.focus();
-      setActiveTab(tabs[next].id);
-    } else if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      const prev = (index - 1 + tabs.length) % tabs.length;
-      tabsRef.current[prev]?.focus();
-      setActiveTab(tabs[prev].id);
-    }
-  }
-
   const roleLabel = {
     admin: 'Admin',
     moderator: 'Moderador',
@@ -143,24 +103,23 @@ export default function Navbar({
 
   const userInitial = (user?.username || 'U')[0].toUpperCase();
 
+  const isChatActive = location.pathname === '/chat';
+
   return (
     <>
       {/* ================= HEADER PRINCIPAL FULL-WIDTH ================= */}
-      <header className="sticky top-0 z-40 w-full bg-theme-surface border-b border-theme-border shadow-md transition-colors">
+      <header className="sticky top-0 z-40 w-full bg-theme-surface/95 backdrop-blur-md border-b border-theme-border shadow-md transition-colors">
         <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 h-16 flex items-center justify-between gap-3">
           
           {/* 1. SECCIÓN IZQUIERDA: LOGOTIPO + ESTADO */}
           <div className="flex items-center gap-3 flex-shrink-0">
-            <div
-              onClick={() => setActiveTab('streaming')}
-              role="button"
-              tabIndex={0}
-              aria-label="CloudMedia Hub - Ir a Inicio"
-              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setActiveTab('streaming')}
+            <Link
+              to="/"
               className="focus-ring flex items-center gap-2 cursor-pointer group rounded-xl p-1"
+              aria-label="CloudMedia Hub - Inicio"
             >
               <CloudMediaLogo size={28} variant="logotype" />
-            </div>
+            </Link>
 
             <div className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-mono">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -168,47 +127,52 @@ export default function Navbar({
             </div>
           </div>
 
-          {/* 2. SECCIÓN CENTRAL: PESTAÑAS DE NAVEGACIÓN CENTRADAS NATURALMENTE */}
+          {/* 2. SECCIÓN CENTRAL: RUTAS DE NAVEGACIÓN */}
           <div className="hidden lg:flex items-center justify-center flex-1 px-2">
             <nav
-              role="tablist"
-              aria-label="Secciones principales"
+              role="navigation"
+              aria-label="Rutas principales"
               className="flex items-center justify-center gap-1.5 rounded-xl p-1 bg-white/5 border border-white/5"
             >
-              {tabs.map(({ id, label, Icon }, index) => {
-                const isActive = activeTab === id;
-                return (
-                  <button
-                    key={id}
-                    ref={(el) => (tabsRef.current[index] = el)}
-                    role="tab"
-                    aria-selected={isActive}
-                    aria-controls={`panel-${id}`}
-                    id={`tab-${id}`}
-                    onClick={() => setActiveTab(id)}
-                    onKeyDown={(e) => handleTabKeyDown(e, index)}
-                    className={`focus-ring relative flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 min-h-9 ${
-                      isActive
-                        ? 'bg-theme-accent text-white shadow-sm'
-                        : 'text-theme-muted hover:text-theme-text hover:bg-white/5'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>{label}</span>
-                  </button>
-                );
-              })}
+              {navLinks.map(({ to, label, Icon, isActive }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={`focus-ring relative flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 min-h-9 ${
+                    isActive
+                      ? 'bg-theme-accent text-white shadow-sm'
+                      : 'text-theme-muted hover:text-theme-text hover:bg-white/5'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>{label}</span>
+                </NavLink>
+              ))}
             </nav>
           </div>
 
-          {/* 3. SECCIÓN DERECHA: BÚSQUEDA, CUOTA, TEMA, USUARIO Y BURGER MENU */}
+          {/* 3. SECCIÓN DERECHA: CLOUDMEDIA BOTÓN, BUSCADOR, CUOTA, TEMA Y PERFIL */}
           <div className="flex items-center justify-end gap-2 sm:gap-2.5 flex-shrink-0 min-w-0">
+            {/* BOTÓN ELEGANTE DE "CloudMedIA" (REUBICADO AL NAVBAR) */}
+            <Link
+              to="/chat"
+              className={`group flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 shadow-md ${
+                isChatActive
+                  ? 'bg-gradient-to-r from-red-600 via-rose-600 to-indigo-600 text-white shadow-red-500/30 ring-2 ring-red-400'
+                  : 'bg-gradient-to-r from-red-600/15 via-rose-600/15 to-purple-600/15 hover:from-red-600 hover:to-indigo-600 text-red-400 hover:text-white border border-red-500/30'
+              }`}
+              title="Conversar con la IA Cinéfila de CloudMedia"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300 group-hover:rotate-12 transition-transform animate-pulse" />
+              <span>CloudMedIA</span>
+            </Link>
+
             {/* Buscador inteligente en desktop (md+) */}
             <div className="w-36 sm:w-44 md:w-48 lg:w-56 xl:w-64 hidden md:block flex-shrink min-w-0">
               <SearchBar onClick={onOpenSearch} />
             </div>
 
-            {/* Botón de búsqueda exclusivo para móvil (arriba) */}
+            {/* Botón de búsqueda para móvil */}
             <button
               onClick={onOpenSearch}
               className="md:hidden min-h-10 min-w-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-theme-muted hover:text-theme-text focus-ring flex-shrink-0"
@@ -218,12 +182,12 @@ export default function Navbar({
               <Search className="w-4 h-4 text-theme-accent" />
             </button>
 
-            {/* Píldora de cuota en Google Drive y botón de sincronización (solo admin o moderator) */}
+            {/* Píldora de cuota en Google Drive */}
             {canAccessStorage && (
               <>
-                <button
-                  onClick={() => setActiveTab('monitoring')}
-                  aria-label={`Cuota en la nube: ${humanUsed} de ${humanMax} (${drivePercentage}%). Ir a Monitor`}
+                <Link
+                  to="/quotas"
+                  aria-label={`Cuota en la nube: ${humanUsed} de ${humanMax} (${drivePercentage}%). Ir a Cuota`}
                   title={`Cuota: ${humanUsed} / ${humanMax} (${drivePercentage}%)`}
                   className="focus-ring hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all hover:scale-105 h-9 flex-shrink-0 whitespace-nowrap"
                   style={{
@@ -244,7 +208,7 @@ export default function Navbar({
                   <span className="hidden 2xl:inline text-theme-muted text-[11px]">
                     ({humanUsed})
                   </span>
-                </button>
+                </Link>
 
                 {/* Sincronización manual de cuota */}
                 <button
@@ -272,15 +236,15 @@ export default function Navbar({
               <Palette className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
 
-            {/* Badge de usuario en pantallas grandes */}
+            {/* Badge de usuario en desktop */}
             <div className="hidden sm:block">
               <UserBadge addToast={addToast} />
             </div>
 
-            {/* Botón Burger Menu para dispositivos móviles/tablets */}
+            {/* Botón Burger Menu para móvil */}
             <button
               onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-              aria-label={isMobileMenuOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}
+              aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
               className="lg:hidden min-h-10 min-w-10 flex items-center justify-center rounded-xl bg-theme-card border border-theme-border text-theme-text hover:border-theme-accent transition-colors focus-ring"
             >
               {isMobileMenuOpen ? (
@@ -296,14 +260,12 @@ export default function Navbar({
       {/* ================= BURGER MENU DRAWER MÓVIL ================= */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          {/* Backdrop con cierre */}
           <div
-            className="fixed inset-0 bg-black/75 backdrop-blur-md transition-opacity"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"
             onClick={() => setIsMobileMenuOpen(false)}
             aria-hidden="true"
           />
 
-          {/* Panel Deslizable Lateral Sólido */}
           <aside
             role="dialog"
             aria-label="Menú principal de navegación"
@@ -320,6 +282,19 @@ export default function Navbar({
                 <X className="w-4 h-4" />
               </button>
             </div>
+
+            {/* CloudMedIA en Drawer */}
+            <Link
+              to="/chat"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-indigo-600 text-white font-bold text-xs shadow-lg mb-4"
+            >
+              <div className="flex items-center gap-2.5">
+                <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+                <span>Hablar con CloudMedIA</span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-white/80" />
+            </Link>
 
             {/* Perfil del Usuario Activo */}
             {user && (
@@ -361,7 +336,6 @@ export default function Navbar({
                 </span>
               </div>
 
-              {/* Barra de progreso sólida */}
               <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden mb-2">
                 <div
                   className="h-full rounded-full transition-all duration-500"
@@ -391,29 +365,24 @@ export default function Navbar({
                 Navegación
               </div>
 
-              {tabs.map(({ id, label, Icon }) => {
-                const isActive = activeTab === id;
-                return (
-                  <button
-                    key={id}
-                    onClick={() => {
-                      setActiveTab(id);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                      isActive
-                        ? 'bg-theme-accent text-white shadow-sm'
-                        : 'bg-theme-card border border-theme-border text-theme-text hover:border-theme-accent'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Icon className="w-4 h-4" />
-                      <span>{label}</span>
-                    </div>
-                    <ChevronRight className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-theme-muted'}`} />
-                  </button>
-                );
-              })}
+              {navLinks.map(({ to, label, Icon, isActive }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    isActive
+                      ? 'bg-theme-accent text-white shadow-sm'
+                      : 'bg-theme-card border border-theme-border text-theme-text hover:border-theme-accent'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Icon className="w-4 h-4" />
+                    <span>{label}</span>
+                  </div>
+                  <ChevronRight className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-theme-muted'}`} />
+                </Link>
+              ))}
 
               {/* Botón de búsqueda en Drawer */}
               <button
@@ -432,7 +401,7 @@ export default function Navbar({
                 </span>
               </button>
 
-              {/* Botón de personalización de tema */}
+              {/* Personalizar tema */}
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
@@ -447,67 +416,17 @@ export default function Navbar({
                 <ChevronRight className="w-3.5 h-3.5 text-theme-muted" />
               </button>
             </div>
-
-            {/* Logout en pie de drawer */}
-            {user && (
-              <button
-                onClick={async () => {
-                  setIsMobileMenuOpen(false);
-                  await logout();
-                  addToast({
-                    type: 'info',
-                    title: 'Sesión Finalizada',
-                    message: 'Has vuelto a la página principal de CloudMedia Hub'
-                  });
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 text-xs font-bold transition-colors focus-ring"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Cerrar Sesión</span>
-              </button>
-            )}
           </aside>
         </div>
       )}
 
-      {/* ================= TOPBAR INFERIOR (BOTTOM NAV CON 4 ITEMS) ================= */}
-      <nav
-        role="navigation"
-        aria-label="Barra de navegación inferior móvil"
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-theme-surface border-t border-theme-border shadow-2xl pb-[env(safe-area-inset-bottom)]"
-      >
-        <div className="grid grid-cols-4 h-16 max-w-full items-center">
-          {bottomNavItems.map(({ id, label, Icon, action, isActive }) => (
-            <button
-              key={id}
-              onClick={action}
-              id={`mobile-tab-${id}`}
-              aria-label={label}
-              className={`flex flex-col items-center justify-center gap-1 h-full min-h-12 transition-all focus-ring ${
-                isActive
-                  ? 'text-theme-accent font-bold'
-                  : 'text-theme-muted hover:text-theme-text'
-              }`}
-            >
-              <div
-                className={`flex items-center justify-center rounded-xl transition-all ${
-                  isActive
-                    ? 'w-8 h-8 bg-theme-card border border-theme-border text-theme-accent'
-                    : 'w-7 h-7'
-                }`}
-              >
-                <Icon className="w-4 h-4" aria-hidden="true" />
-              </div>
-              <span className={`text-[10px] tracking-tight leading-none ${isActive ? 'font-bold' : 'font-medium'}`}>
-                {label}
-              </span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      {/* Modal de Tema */}
+      <ThemePanel
+        isOpen={isThemePanelOpen}
+        onClose={() => setIsThemePanelOpen(false)}
+      />
 
-      {/* Modal de Tema y Perfil */}
-      <ThemePanel isOpen={isThemePanelOpen} onClose={() => setIsThemePanelOpen(false)} />
+      {/* Modal de Perfil */}
       <ProfileModal
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}

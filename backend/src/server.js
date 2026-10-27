@@ -14,6 +14,8 @@ import usersRouter from './routes/users.js';
 import metadataRouter from './routes/metadata.js';
 import moviesRouter from './routes/movies.js';
 import watchProgressRouter from './routes/watchProgress.js';
+import searchRouter from './routes/search.js';
+import chatRouter from './routes/chat.js';
 import { getMediaInfo, handleThumbnail, handleSubtitles } from './services/streamService.js';
 import { listFiles } from './services/filesService.js';
 import { authGuard, roleGuard } from './middleware/auth.js';
@@ -92,6 +94,8 @@ app.use('/api/users', usersRouter);
 app.use('/api/metadata', metadataRouter);
 app.use('/api/movies', moviesRouter);
 app.use('/api/watch-progress', watchProgressRouter);
+app.use('/api/search', searchRouter);
+app.use('/api/chat', chatRouter);
 
 // /api/media/catalog (viewer+)
 app.get('/api/media/catalog', authGuard, roleGuard(['viewer']), async (req, res) => {

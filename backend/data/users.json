@@ -2,9 +2,9 @@
   {
     "id": "1",
     "username": "ivnmtz09",
-    "password": "$2b$10$DM.Q6xKXw748zEqNovl6Q.1zrd.epMHFXsmJLMBMtZnVOwdb0FB7u",
+    "password": "$2b$10$J33J1WUHq8ZCnB7D16i/UeKSJiAQCeG1ELsML2I.s1PFDQ66dN1eu",
     "role": "admin",
-    "mustChangePassword": true
+    "mustChangePassword": false
   },
   {
     "id": "2",

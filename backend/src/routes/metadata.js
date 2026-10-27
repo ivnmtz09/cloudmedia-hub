@@ -5,6 +5,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { authGuard, roleGuard } from '../middleware/auth.js';
 import { readMetadata, syncAllMetadata, getSeriesTree } from '../services/metadataService.js';
+import { enrichMetadataWithAI } from '../services/geminiService.js';
+import { getOrEnrichMetadata, readMetadataCache } from '../services/metadataEnricher.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,6 +33,21 @@ router.get('/poster', async (req, res) => {
     return res.status(404).json({ error: 'Póster no encontrado' });
   } catch (err) {
     return res.status(500).json({ error: 'Error al servir póster' });
+  }
+});
+
+// GET /api/metadata/item (Requiere viewer+)
+router.get('/item', authGuard, async (req, res) => {
+  try {
+    const { path: itemPath, name, isDir } = req.query;
+    if (!itemPath) return res.status(400).json({ error: 'Ruta no especificada' });
+
+    const itemName = name || path.basename(itemPath);
+    const isDirectory = isDir === 'true';
+    const metadata = await getOrEnrichMetadata(itemPath, itemName, isDirectory);
+    return res.json({ metadata });
+  } catch (err) {
+    return res.status(500).json({ error: err.message || 'Error al obtener metadatos del elemento' });
   }
 });
 
@@ -74,6 +91,26 @@ router.post('/sync-metadata', authGuard, roleGuard('moderator'), async (req, res
     });
   } catch (err) {
     return res.status(500).json({ error: 'Error al iniciar sincronización' });
+  }
+});
+
+// POST /api/metadata/ai-enrich (Requiere moderator o admin)
+router.post('/ai-enrich', authGuard, roleGuard('moderator'), async (req, res) => {
+  try {
+    const { filename } = req.body;
+    if (!filename) {
+      return res.status(400).json({ error: 'Nombre de archivo (filename) requerido en el cuerpo de la petición' });
+    }
+
+    const enrichedData = await enrichMetadataWithAI(filename);
+    return res.json({
+      status: 'success',
+      filename,
+      data: enrichedData
+    });
+  } catch (err) {
+    console.error('Error en /api/metadata/ai-enrich:', err);
+    return res.status(500).json({ error: err.message || 'Error al enriquecer metadatos con AI' });
   }
 });
 

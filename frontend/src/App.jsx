@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './components/common/Navbar';
+import TopProgressBar from './components/common/TopProgressBar';
 import Toast from './components/common/Toast';
 import SplashScreen from './components/common/SplashScreen';
 import LandingPage from './components/landing/LandingPage';
 import StreamingView from './components/streaming/StreamingView';
 import CloudExplorer from './components/explorer/CloudExplorer';
 import MonitoringView from './components/monitoring/MonitoringView';
-import { UsersPanel } from './components/admin/UsersPanel';
 import AdminDashboard from './components/admin/AdminDashboard';
+import CloudMedIAView from './components/chat/CloudMedIAView';
+import MediaDetailsView from './components/explorer/MediaDetailsView';
 import { LoginModal } from './components/auth/LoginModal';
 import { ForcePasswordChangeModal } from './components/auth/ForcePasswordChangeModal';
 import { CommandPalette } from './components/search/CommandPalette';
@@ -18,6 +21,8 @@ import { useServerOffline } from './contexts/ServerOfflineContext';
 import { fetchStats, refreshStats, fetchCatalog, fetchMetadata } from './services/api';
 
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { isServerOffline, retryConnection } = useServerOffline();
   const {
     user,
@@ -26,7 +31,7 @@ export default function App() {
     setIsLoginModalOpen,
     isForcePasswordModalOpen
   } = useAuth();
-  const [activeTab, setActiveTab] = useState('streaming');
+
   const [stats, setStats] = useState(null);
   const [isRefreshingStats, setIsRefreshingStats] = useState(false);
   const [toasts, setToasts] = useState([]);
@@ -96,16 +101,10 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Automatic scroll restoration when switching tabs, routes or auth state
-  useEffect(() => {
-    if ('scrollRestoration' in window.history) {
-      window.history.scrollRestoration = 'manual';
-    }
-  }, []);
-
+  // Automatic scroll restoration when switching routes
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }, [activeTab, user]);
+  }, [location.pathname]);
 
   // Track previous user to trigger smooth logout confirmation toast
   const prevUserRef = React.useRef(user);
@@ -173,15 +172,18 @@ export default function App() {
     );
   }
 
+  const isMediaDetailsRoute = location.pathname.startsWith('/media/');
+
   return (
-    <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-opacity duration-500 animate-fade-in">
+    <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-opacity duration-500 animate-fade-in relative selection:bg-red-600 selection:text-white">
+      {/* 1. Indicador Superior de Carga (Top Loading Bar) */}
+      <TopProgressBar />
+
       {/* Programmatic Splash Screen on initial session load */}
       <SplashScreen />
 
-      {/* Top Navbar */}
+      {/* 2. Top Navbar con enlaces y botón CloudMedIA */}
       <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
         stats={stats}
         isRefreshingStats={isRefreshingStats}
         onRefreshStats={handleRefreshStats}
@@ -189,51 +191,65 @@ export default function App() {
         addToast={addToast}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-24 lg:pb-12">
-        {activeTab === 'streaming' && (
-          <StreamingView
-            onGoToExplorer={() => setActiveTab('explorer')}
-            addToast={addToast}
+      {/* 3. Main Content Area con Enrutamiento react-router-dom */}
+      <main className={`flex-1 w-full mx-auto pb-24 lg:pb-12 ${
+        isMediaDetailsRoute
+          ? 'max-w-full px-0 pt-0'
+          : 'max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8'
+      }`}>
+        <Routes>
+          <Route path="/" element={<StreamingView addToast={addToast} />} />
+          <Route path="/explorer" element={<CloudExplorer addToast={addToast} />} />
+          <Route
+            path="/quotas"
+            element={
+              <MonitoringView
+                stats={stats}
+                isRefreshingStats={isRefreshingStats}
+                onRefreshStats={handleRefreshStats}
+                addToast={addToast}
+              />
+            }
           />
-        )}
-
-        {activeTab === 'explorer' && (
-          <CloudExplorer
-            addToast={addToast}
+          {hasRole('admin') && (
+            <Route
+              path="/admin"
+              element={
+                <AdminDashboard
+                  stats={stats}
+                  onRefreshStats={handleRefreshStats}
+                  addToast={addToast}
+                />
+              }
+            />
+          )}
+          <Route path="/chat" element={<CloudMedIAView />} />
+          <Route
+            path="/media/:id"
+            element={
+              <MediaDetailsView
+                onPlay={(item) => setSelectedMedia(item)}
+              />
+            }
           />
-        )}
-
-        {activeTab === 'monitoring' && (
-          <MonitoringView
-            stats={stats}
-            isRefreshingStats={isRefreshingStats}
-            onRefreshStats={handleRefreshStats}
-            addToast={addToast}
-          />
-        )}
-
-        {activeTab === 'users' && hasRole('admin') && (
-          <AdminDashboard
-            stats={stats}
-            onRefreshStats={handleRefreshStats}
-            addToast={addToast}
-          />
-        )}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-theme-border bg-theme-surface py-6 text-center text-xs text-theme-muted mb-16 lg:mb-0">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>CloudMedia Hub • Streaming Engine &amp; rclone cloud sync</span>
+      {!isMediaDetailsRoute && location.pathname !== '/chat' && (
+        <footer className="border-t border-theme-border bg-theme-surface py-6 text-center text-xs text-theme-muted mb-16 lg:mb-0">
+          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span>CloudMedia Hub &bull; Motor de Streaming HTTP 206 y Cloud Sync</span>
+            </div>
+            <p className="flex items-center gap-1 text-theme-muted">
+              Plataforma Cinemática de Nueva Generación &bull; React + Tailwind CSS
+            </p>
           </div>
-          <p className="flex items-center gap-1 text-theme-muted">
-            Diseñado con estética Cine y Arquitectura Modular • React + Tailwind CSS
-          </p>
-        </div>
-      </footer>
+        </footer>
+      )}
 
       {/* Command Palette (Ctrl+K) */}
       <CommandPalette
@@ -242,11 +258,11 @@ export default function App() {
         catalog={catalog}
         metadata={metadata}
         onSelectMedia={(item) => {
-          setSelectedMedia(item);
+          navigate(`/media/${encodeURIComponent(item.path)}`);
         }}
       />
 
-      {/* Direct Video Player for Search Results */}
+      {/* Direct Video Player Modal */}
       {selectedMedia && (
         <VideoPlayerModal
           item={selectedMedia}
