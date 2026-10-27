@@ -14,6 +14,7 @@ import usersRouter from './routes/users.js';
 import metadataRouter from './routes/metadata.js';
 import moviesRouter from './routes/movies.js';
 import watchProgressRouter from './routes/watchProgress.js';
+import favoritesRouter from './routes/favorites.js';
 import searchRouter from './routes/search.js';
 import chatRouter from './routes/chat.js';
 import { getMediaInfo, handleThumbnail, handleSubtitles } from './services/streamService.js';
@@ -94,6 +95,7 @@ app.use('/api/users', usersRouter);
 app.use('/api/metadata', metadataRouter);
 app.use('/api/movies', moviesRouter);
 app.use('/api/watch-progress', watchProgressRouter);
+app.use('/api/favorites', favoritesRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/chat', chatRouter);
 
@@ -165,8 +167,9 @@ app.use(express.static(frontendDist));
 // SPA fallback: todas las rutas no-API retornan index.html
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(frontendDist, 'index.html'));
+    return res.sendFile(path.join(frontendDist, 'index.html'));
   }
+  return res.status(404).json({ error: 'Ruta de API no encontrada' });
 });
 
 const server = app.listen(PORT, HOST, () => {
@@ -199,6 +202,8 @@ const server = app.listen(PORT, HOST, () => {
   console.log(`   POST /api/movies/sync-metadata     (moderator+)`);
   console.log(`   GET  /api/watch-progress           (viewer+)`);
   console.log(`   POST /api/watch-progress           (viewer+)`);
+  console.log(`   GET  /api/favorites                (viewer+)`);
+  console.log(`   POST /api/favorites/toggle         (viewer+)`);
   console.log(`   GET  /api/users                    (admin)`);
   console.log(`   POST /api/users                    (admin)`);
   console.log(`   PUT  /api/users/:id                (admin)`);

@@ -1,11 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Play, Star, Calendar, HardDrive, Film, Tv,
-  Shield, User, ChevronDown, CheckCircle2, Clock
+  Shield, User, ChevronDown, CheckCircle2, Clock, Bookmark,
+  BookmarkCheck, Sparkles
 } from 'lucide-react';
-import { fetchMediaItemMetadata, fetchSeriesTree } from '../../services/api';
+import {
+  fetchMediaItemMetadata,
+  fetchSeriesTree,
+  fetchFavorites,
+  toggleFavorite,
+  fetchCatalog,
+  fetchMetadata
+} from '../../services/api';
 import VideoPlayerModal from '../streaming/VideoPlayerModal';
+import VerticalPosterCard from '../streaming/VerticalPosterCard';
 
 export default function MediaDetailsView({ media: propMedia, onBack: propOnBack, onPlay: propOnPlay }) {
   const { id } = useParams();
@@ -18,6 +27,12 @@ export default function MediaDetailsView({ media: propMedia, onBack: propOnBack,
   const [metadata, setMetadata] = useState(propMedia?.metadata || null);
   const [loading, setLoading] = useState(true);
   const [playingItem, setPlayingItem] = useState(null);
+
+  // Estados para Favoritos y Títulos Similares
+  const [favorites, setFavorites] = useState([]);
+  const [isTogglingFav, setIsTogglingFav] = useState(false);
+  const [similarTitles, setSimilarTitles] = useState([]);
+  const [catalogMetadata, setCatalogMetadata] = useState({});
 
   // Estados para Series y Anime
   const [seasons, setSeasons] = useState([]);
@@ -50,9 +65,110 @@ export default function MediaDetailsView({ media: propMedia, onBack: propOnBack,
     };
   }, [mediaPath, mediaName]);
 
+  // Cargar lista de favoritos del usuario
+  useEffect(() => {
+    fetchFavorites()
+      .then((favs) => setFavorites(favs || []))
+      .catch(() => {});
+  }, []);
+
+  const isFavorite = favorites.includes(mediaPath);
+
+  const handleToggleFavorite = async () => {
+    if (isTogglingFav || !mediaPath) return;
+    setIsTogglingFav(true);
+    try {
+      const res = await toggleFavorite(mediaPath);
+      setFavorites(res.favorites || []);
+    } catch (e) {
+      console.warn('Error alternando favorito:', e);
+    } finally {
+      setIsTogglingFav(false);
+    }
+  };
+
   // Si es Serie o Anime, cargar árbol de temporadas y episodios
   const isSeries = metadata?.type === 'serie' || mediaPath?.startsWith('Series');
   const isAnime = metadata?.type === 'anime' || mediaPath?.startsWith('Anime');
+
+  // Cargar y calcular Títulos Similares en base a géneros, temática y catálogo
+  useEffect(() => {
+    let isMounted = true;
+    async function loadSimilar() {
+      try {
+        const [catData, metaData] = await Promise.all([
+          fetchCatalog().catch(() => ({ movies: [], series: [], anime: [], personal: [] })),
+          fetchMetadata().catch(() => ({}))
+        ]);
+
+        if (!isMounted) return;
+        setCatalogMetadata(metaData || {});
+
+        const allMedia = [
+          ...(catData.movies || []),
+          ...(catData.series || []),
+          ...(catData.anime || [])
+        ];
+
+        // Filtrar excluyendo el medio actual
+        const candidates = allMedia.filter((item) => item.path && item.path !== mediaPath);
+
+        const currentGenres = (metadata?.genres || []).map((g) => g.toLowerCase());
+        const currentType = isAnime ? 'anime' : isSeries ? 'serie' : 'película';
+        const currentTitle = (metadata?.cleanTitle || metadata?.title || mediaName || '').toLowerCase();
+        const currentKeywords = currentTitle.split(/[\s:_\.-]+/).filter((w) => w.length > 3);
+
+        const scored = candidates.map((cand) => {
+          const candMeta = metaData[cand.path] || {};
+          let score = 0;
+
+          // Categoría o tipo coincidente
+          const candType = (candMeta.type || cand.category || (cand.path?.startsWith('Anime') ? 'anime' : cand.path?.startsWith('Series') ? 'serie' : 'película')).toLowerCase();
+          if (candType === currentType) {
+            score += 5;
+          }
+
+          // Coincidencia de géneros
+          const candGenres = (candMeta.genres || []).map((g) => g.toLowerCase());
+          for (const g of currentGenres) {
+            if (candGenres.includes(g)) score += 4;
+          }
+
+          // Coincidencia por palabras clave en títulos (ej. franquicias: Dragon Ball, Batman, etc.)
+          const candTitle = (candMeta.cleanTitle || candMeta.title || cand.name || '').toLowerCase();
+          for (const kw of currentKeywords) {
+            if (candTitle.includes(kw)) score += 6;
+          }
+
+          // Factor desempate TMDB rating
+          if (candMeta.rating) score += Math.min(2, candMeta.rating / 5);
+
+          return { cand, score, meta: candMeta };
+        });
+
+        // Filtrar con score relevante (> 3) y ordenar de mayor a menor
+        const topSimilar = scored
+          .filter((s) => s.score >= 4)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 6)
+          .map((s) => s.cand);
+
+        if (isMounted) {
+          setSimilarTitles(topSimilar);
+        }
+      } catch (err) {
+        console.warn('Error calculando títulos similares:', err);
+      }
+    }
+
+    if (metadata) {
+      loadSimilar();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [mediaPath, metadata, isAnime, isSeries, mediaName]);
 
   useEffect(() => {
     let isMounted = true;
@@ -137,6 +253,47 @@ export default function MediaDetailsView({ media: propMedia, onBack: propOnBack,
 
   const currentSeason = seasons.find((s) => s.number === selectedSeasonNumber) || seasons[0];
   const currentEpisodes = currentSeason?.episodes || [];
+
+  // Siguiente episodio para autoplay (Binge-Watching estilo Netflix)
+  const nextEpisode = useMemo(() => {
+    if (!playingItem || !currentEpisodes?.length) return null;
+    const currentIdx = currentEpisodes.findIndex(
+      (ep) => (ep.path && ep.path === playingItem.path) || (ep.name && ep.name === playingItem.name)
+    );
+    if (currentIdx !== -1 && currentIdx + 1 < currentEpisodes.length) {
+      const next = currentEpisodes[currentIdx + 1];
+      return {
+        ...next,
+        season: next.season || selectedSeasonNumber,
+        posterUrl: next.posterUrl || posterUrl || backdropUrl
+      };
+    }
+    // Si terminó la temporada actual y existe una siguiente temporada
+    if (currentIdx !== -1 && currentIdx + 1 >= currentEpisodes.length && seasons?.length) {
+      const currentSeasonIdx = seasons.findIndex((s) => s.number === selectedSeasonNumber);
+      if (currentSeasonIdx !== -1 && currentSeasonIdx + 1 < seasons.length) {
+        const nextSeason = seasons[currentSeasonIdx + 1];
+        if (nextSeason?.episodes?.length > 0) {
+          const next = nextSeason.episodes[0];
+          return {
+            ...next,
+            season: next.season || nextSeason.number,
+            posterUrl: next.posterUrl || posterUrl || backdropUrl
+          };
+        }
+      }
+    }
+    return null;
+  }, [playingItem, currentEpisodes, seasons, selectedSeasonNumber, posterUrl, backdropUrl]);
+
+  const handleNextEpisode = useCallback(() => {
+    if (nextEpisode) {
+      if (nextEpisode.season && nextEpisode.season !== selectedSeasonNumber) {
+        setSelectedSeasonNumber(nextEpisode.season);
+      }
+      setPlayingItem(nextEpisode);
+    }
+  }, [nextEpisode, selectedSeasonNumber]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-slate-100 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 -mt-6 sm:-mt-8 pb-20 animate-fade-in relative selection:bg-red-600 selection:text-white">
@@ -250,8 +407,8 @@ export default function MediaDetailsView({ media: propMedia, onBack: propOnBack,
               ))}
             </div>
 
-            {/* BOTÓN DE ACCIÓN GIGANTE Y PRIMARIO: "Reproducir" */}
-            <div className="pt-2 w-full sm:w-auto">
+            {/* BOTONES DE ACCIÓN: "Reproducir" y "Guardar en Mi Lista" */}
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
               <button
                 onClick={() => handlePlayMedia(propMedia || { path: mediaPath, name: mediaName, title })}
                 className="group w-full sm:w-auto inline-flex items-center justify-center gap-3.5 sm:gap-4 px-6 sm:px-12 py-3.5 sm:py-5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-base sm:text-xl shadow-2xl shadow-red-600/40 border border-white/20 transition-all duration-300 transform hover:scale-[1.02] active:scale-95 touch-manipulation"
@@ -267,6 +424,25 @@ export default function MediaDetailsView({ media: propMedia, onBack: propOnBack,
                     Transmisión nativa sin cortes en alta fidelidad
                   </span>
                 </div>
+              </button>
+
+              {/* Botón Favorito / Mi Lista */}
+              <button
+                type="button"
+                onClick={handleToggleFavorite}
+                disabled={isTogglingFav}
+                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-4 sm:py-5 rounded-2xl font-bold text-sm sm:text-base border transition-all duration-200 active:scale-95 touch-manipulation shadow-lg ${
+                  isFavorite
+                    ? 'bg-red-950/80 hover:bg-red-900/90 text-red-300 border-red-500/50 shadow-red-600/20'
+                    : 'bg-gray-800/80 hover:bg-gray-700/80 text-slate-200 border-slate-700/80 hover:border-slate-600'
+                }`}
+              >
+                {isFavorite ? (
+                  <BookmarkCheck className="w-5 h-5 text-red-500 fill-red-500" />
+                ) : (
+                  <Bookmark className="w-5 h-5 text-slate-300" />
+                )}
+                <span>{isFavorite ? 'En Mi Lista' : 'Guardar en Mi Lista'}</span>
               </button>
             </div>
 
@@ -411,6 +587,42 @@ export default function MediaDetailsView({ media: propMedia, onBack: propOnBack,
             </div>
           </div>
         )}
+
+        {/* ================= 4. TÍTULOS SIMILARES EN TU CATÁLOGO ================= */}
+        {similarTitles.length > 0 && (
+          <div className="mt-16 pt-10 border-t border-slate-800 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-black text-white flex items-center gap-2.5">
+                  <Sparkles className="w-6 h-6 text-red-500" />
+                  Títulos Similares en tu Catálogo
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">
+                  Recomendaciones seleccionadas de tu biblioteca basadas en temática, género y categoría.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4">
+              {similarTitles.map((item, idx) => (
+                <VerticalPosterCard
+                  key={item.path || idx}
+                  item={item}
+                  metadata={catalogMetadata}
+                  isFavorite={favorites.includes(item.path)}
+                  onToggleFavorite={async (toggledItem) => {
+                    const res = await toggleFavorite(toggledItem.path);
+                    setFavorites(res.favorites || []);
+                  }}
+                  onClick={() => {
+                    navigate(`/media/${encodeURIComponent(item.path)}`);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal de Reproducción Nativo HTTP 206 */}
@@ -418,6 +630,8 @@ export default function MediaDetailsView({ media: propMedia, onBack: propOnBack,
         <VideoPlayerModal
           item={playingItem}
           onClose={() => setPlayingItem(null)}
+          onNextEpisode={nextEpisode ? handleNextEpisode : undefined}
+          nextEpisode={nextEpisode}
         />
       )}
     </div>

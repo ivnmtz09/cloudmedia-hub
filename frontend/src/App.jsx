@@ -13,7 +13,7 @@ import CloudMedIAView from './components/chat/CloudMedIAView';
 import MediaDetailsView from './components/explorer/MediaDetailsView';
 import { LoginModal } from './components/auth/LoginModal';
 import { ForcePasswordChangeModal } from './components/auth/ForcePasswordChangeModal';
-import { CommandPalette } from './components/search/CommandPalette';
+import QuickSearchModal from './components/search/QuickSearchModal';
 import VideoPlayerModal from './components/streaming/VideoPlayerModal';
 import ServerOfflineFallback from './components/common/ServerOfflineFallback';
 import { useAuth } from './contexts/AuthContext';
@@ -66,7 +66,7 @@ export default function App() {
     }
   }, []);
 
-  // Load catalog & metadata for CommandPalette
+  // Load catalog & metadata for QuickSearchModal Omnibar
   const loadCatalogData = useCallback(async () => {
     try {
       const [cat, meta] = await Promise.all([
@@ -251,8 +251,8 @@ export default function App() {
         </footer>
       )}
 
-      {/* Command Palette (Ctrl+K) */}
-      <CommandPalette
+      {/* Global QuickSearchModal Omnibar (Ctrl+K / Cmd+K) */}
+      <QuickSearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         catalog={catalog}

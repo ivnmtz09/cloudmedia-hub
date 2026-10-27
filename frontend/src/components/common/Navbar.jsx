@@ -9,6 +9,7 @@ import { ThemePanel } from './ThemePanel';
 import { UserBadge } from '../auth/UserBadge';
 import { SearchBar } from '../search/SearchBar';
 import { ProfileModal } from '../profile/ProfileModal';
+import ServerSelector from './ServerSelector';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Navbar({
@@ -24,6 +25,9 @@ export default function Navbar({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { user, hasRole } = useAuth();
+
+  const isMac = typeof window !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent || '');
+  const shortcutLabel = isMac ? '⌘K' : 'Ctrl K';
 
   const drivePercentage = stats?.googleDrive?.percentage ?? stats?.percentage ?? 0;
   const humanUsed = stats?.googleDrive?.human_used ?? stats?.human_used ?? '0 GB';
@@ -175,11 +179,12 @@ export default function Navbar({
             {/* Botón de búsqueda para móvil */}
             <button
               onClick={onOpenSearch}
-              className="md:hidden min-h-10 min-w-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-theme-muted hover:text-theme-text focus-ring flex-shrink-0"
+              className="md:hidden min-h-10 px-2.5 flex items-center justify-center gap-1.5 rounded-xl bg-white/5 border border-white/10 text-theme-muted hover:text-theme-text focus-ring flex-shrink-0"
               aria-label="Buscar películas, series y anime"
-              title="Buscar (Ctrl+K)"
+              title={`Buscar catálogo (${shortcutLabel})`}
             >
               <Search className="w-4 h-4 text-theme-accent" />
+              <span className="text-[10px] font-mono text-theme-muted/80">{shortcutLabel}</span>
             </button>
 
             {/* Píldora de cuota en Google Drive */}
@@ -225,6 +230,11 @@ export default function Navbar({
                 </button>
               </>
             )}
+
+            {/* Selector de Doble Servidor / Failover (🟢 Local / 🟢 VPS) */}
+            <div className="hidden sm:block flex-shrink-0">
+              <ServerSelector addToast={addToast} />
+            </div>
 
             {/* Selector de Tema */}
             <button
@@ -359,6 +369,14 @@ export default function Navbar({
               </div>
             </div>
 
+            {/* Selector de Servidor para móvil */}
+            <div className="mb-4">
+              <div className="text-[11px] font-mono uppercase tracking-wider text-theme-muted px-1 mb-2">
+                Servidor Activo (Failover)
+              </div>
+              <ServerSelector addToast={addToast} compact={true} />
+            </div>
+
             {/* Enlaces de Navegación del Sistema */}
             <div className="flex-1 space-y-1.5 mb-4">
               <div className="text-[11px] font-mono uppercase tracking-wider text-theme-muted px-1 mb-2">
@@ -391,13 +409,14 @@ export default function Navbar({
                   onOpenSearch();
                 }}
                 className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-theme-card border border-theme-border text-theme-text hover:border-theme-accent transition-all"
+                title={`Buscar en catálogo (${shortcutLabel})`}
               >
                 <div className="flex items-center gap-2.5">
                   <Search className="w-4 h-4 text-theme-accent" />
                   <span>Buscar Multimedia</span>
                 </div>
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-theme-muted">
-                  Ctrl+K
+                  {shortcutLabel}
                 </span>
               </button>
 

@@ -11,6 +11,35 @@ import { formatBytes } from '../utils/formatters.js';
 
 const execFilePromise = util.promisify(execFile);
 
+// Caché en memoria de detalles de códec de video para no ejecutar ffprobe en cada petición de streaming
+const videoCodecDetailsCache = new Map();
+
+async function getVideoCodecDetails(filePath) {
+  if (videoCodecDetailsCache.has(filePath)) {
+    return videoCodecDetailsCache.get(filePath);
+  }
+  try {
+    const { stdout } = await execFilePromise('ffprobe', [
+      '-v', 'error',
+      '-select_streams', 'v:0',
+      '-show_entries', 'stream=codec_name,pix_fmt',
+      '-of', 'json',
+      filePath
+    ], { timeout: 4000 });
+    const parsed = JSON.parse(stdout);
+    const stream = parsed?.streams?.[0] || {};
+    const info = {
+      codec: (stream.codec_name || '').toLowerCase(),
+      pixFmt: (stream.pix_fmt || '').toLowerCase()
+    };
+    videoCodecDetailsCache.set(filePath, info);
+    return info;
+  } catch (err) {
+    console.warn('[streamService] Error detectando códec de video con ffprobe:', err.message);
+    return { codec: 'unknown', pixFmt: 'yuv420p' };
+  }
+}
+
 // Asegurar que exista el directorio de caché de miniaturas
 if (!fsSync.existsSync(CACHE_DIR)) {
   fsSync.mkdirSync(CACHE_DIR, { recursive: true });
@@ -149,8 +178,19 @@ export async function handleStream(req, res) {
   const ext = path.extname(fullPath).toLowerCase();
   const isMkv = ext === '.mkv';
   const isAvi = ext === '.avi';
-  // Si remux=false está explícito, permitir stream directo (ej. para clientes VLC o pruebas Range)
-  const forceRemux = req.query.remux === 'true' || (req.query.remux !== 'false' && (req.query.audioTrack !== undefined || isMkv || isAvi));
+
+  // Obtener detalles técnicos del códec para verificar compatibilidad con navegadores HTML5
+  const videoDetails = await getVideoCodecDetails(fullPath);
+  const isBrowserCompatibleH264 =
+    (videoDetails.codec === 'h264' || videoDetails.codec === 'avc1') &&
+    !videoDetails.pixFmt.includes('10le') &&
+    !videoDetails.pixFmt.includes('12le') &&
+    !videoDetails.pixFmt.includes('444');
+
+  // Si el códec es incompatible con navegadores (ej. mpeg4/xvid, hevc o 10-bit),
+  // se fuerza el remux con transcodificación de video para evitar pantalla negra
+  const mustTranscodeVideo = !isBrowserCompatibleH264;
+  const forceRemux = mustTranscodeVideo || req.query.remux === 'true' || (req.query.remux !== 'false' && (req.query.audioTrack !== undefined || isMkv || isAvi));
 
   // Manejar solicitudes HEAD de forma inmediata
   if (req.method === 'HEAD') {
@@ -164,16 +204,29 @@ export async function handleStream(req, res) {
   }
 
   if (forceRemux) {
-    // Modo Remuxing ligero al vuelo con FFmpeg
+    // Modo Remuxing / Transcodificación ligera al vuelo con FFmpeg
     const startSec = Math.max(0, parseFloat(req.query.start || '0'));
     const audioTrackIdx = req.query.audioTrack !== undefined ? parseInt(req.query.audioTrack, 10) : 0;
+
+    // Si el video ya es H.264 compatible en 8 bits, copiamos sin tocar la CPU (-c:v copy).
+    // Si es MPEG-4 Part 2 (XviD), HEVC o 10-bit que los navegadores reproducen en negro,
+    // transcodificamos a H.264 ultrafast zerolatency en tiempo real.
+    const videoEncodingArgs = isBrowserCompatibleH264
+      ? ['-c:v', 'copy']
+      : [
+          '-c:v', 'libx264',
+          '-preset', 'ultrafast',
+          '-tune', 'zerolatency',
+          '-pix_fmt', 'yuv420p',
+          '-crf', '22'
+        ];
 
     const ffmpegArgs = [
       '-ss', startSec.toString(),
       '-i', fullPath,
       '-map', '0:v:0',
       '-map', `0:a:${audioTrackIdx}?`,
-      '-c:v', 'copy',
+      ...videoEncodingArgs,
       '-c:a', 'aac',
       '-b:a', '192k',
       '-f', 'mp4',

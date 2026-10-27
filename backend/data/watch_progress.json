@@ -28,11 +28,20 @@
   },
   "1:Peliculas/Hijo de Batman 720p LAT 707.03 MB.mp4": {
     "path": "Peliculas/Hijo de Batman 720p LAT 707.03 MB.mp4",
-    "currentTime": 100.560887,
+    "currentTime": 4.916074,
     "duration": 4449.040867,
-    "percentage": 2,
+    "percentage": 0,
     "season": null,
     "episode": null,
-    "updatedAt": "2026-10-27T17:36:09.586Z"
+    "updatedAt": "2026-10-27T19:58:20.497Z"
+  },
+  "1:Peliculas/Justice League The Flashpoint Paradox HD 698.20 MB.mkv": {
+    "path": "Peliculas/Justice League The Flashpoint Paradox HD 698.20 MB.mkv",
+    "currentTime": 2953.206486,
+    "duration": 4874.7,
+    "percentage": 61,
+    "season": null,
+    "episode": null,
+    "updatedAt": "2026-10-27T19:59:35.418Z"
   }
 }

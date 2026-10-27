@@ -8,7 +8,7 @@ import {
 import { fetchMediaInfo, getStreamUrl, getSubtitleUrl, saveWatchProgress } from '../../services/api';
 import { useTheme } from '../../contexts/ThemeContext';
 
-export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
+export default function VideoPlayerModal({ item, onClose, onNextEpisode, nextEpisode }) {
   const { currentTheme } = useTheme();
   const accentColor = currentTheme?.colors?.accent || '#E50914';
   const surfaceColor = currentTheme?.colors?.surface || '#141414';
@@ -38,6 +38,114 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
   const [isMiniMode, setIsMiniMode] = useState(false);
   const [isIdle, setIsIdle] = useState(false); // Inactividad del usuario
   const [showRemainingTime, setShowRemainingTime] = useState(false);
+
+  // Binge-Watching: Autoplay Siguiente Episodio estilo Netflix
+  const NEXT_EPISODE_COUNTDOWN_DURATION = 10;
+  const [showNextOverlay, setShowNextOverlay] = useState(false);
+  const [countdownSeconds, setCountdownSeconds] = useState(NEXT_EPISODE_COUNTDOWN_DURATION);
+  const [nextThumbError, setNextThumbError] = useState(false);
+
+  const dismissedNextEpisodeRef = useRef(false);
+  const hasTriggeredNextEpisodeRef = useRef(false);
+  const nextEpisodeTimerRef = useRef(null);
+  const onNextEpisodeRef = useRef(onNextEpisode);
+
+  // Sincronizar referencia actualizada de onNextEpisode
+  useEffect(() => {
+    onNextEpisodeRef.current = onNextEpisode;
+  }, [onNextEpisode]);
+
+  // Reiniciar estado de cuenta regresiva cuando cambie de episodio o video
+  useEffect(() => {
+    dismissedNextEpisodeRef.current = false;
+    hasTriggeredNextEpisodeRef.current = false;
+    setShowNextOverlay(false);
+    setCountdownSeconds(NEXT_EPISODE_COUNTDOWN_DURATION);
+    setNextThumbError(false);
+    if (nextEpisodeTimerRef.current) {
+      clearInterval(nextEpisodeTimerRef.current);
+      nextEpisodeTimerRef.current = null;
+    }
+  }, [item?.path]);
+
+  // Reiniciar error de miniatura si cambia el posterUrl del siguiente episodio
+  useEffect(() => {
+    setNextThumbError(false);
+  }, [nextEpisode?.posterUrl]);
+
+  // Disparar overlay de cuenta regresiva
+  const triggerNextEpisodeOverlay = useCallback(() => {
+    if (!onNextEpisodeRef.current) return;
+    if (dismissedNextEpisodeRef.current || hasTriggeredNextEpisodeRef.current) return;
+    hasTriggeredNextEpisodeRef.current = true;
+    setCountdownSeconds(NEXT_EPISODE_COUNTDOWN_DURATION);
+    setShowNextOverlay(true);
+  }, []);
+
+  // Botón primario: Reproducir Ahora (ejecuta inmediatamente y cancela temporizador)
+  const handlePlayNextEpisodeNow = useCallback(() => {
+    if (nextEpisodeTimerRef.current) {
+      clearInterval(nextEpisodeTimerRef.current);
+      nextEpisodeTimerRef.current = null;
+    }
+    setShowNextOverlay(false);
+    if (onNextEpisodeRef.current) {
+      onNextEpisodeRef.current();
+    }
+  }, []);
+
+  // Botón secundario: Cancelar (descarta overlay y previene disparo automático para este episodio)
+  const handleCancelNextEpisode = useCallback(() => {
+    if (nextEpisodeTimerRef.current) {
+      clearInterval(nextEpisodeTimerRef.current);
+      nextEpisodeTimerRef.current = null;
+    }
+    setShowNextOverlay(false);
+    dismissedNextEpisodeRef.current = true;
+  }, []);
+
+  // Manejo de la cuenta regresiva segundo a segundo
+  useEffect(() => {
+    if (!showNextOverlay) {
+      if (nextEpisodeTimerRef.current) {
+        clearInterval(nextEpisodeTimerRef.current);
+        nextEpisodeTimerRef.current = null;
+      }
+      return;
+    }
+
+    nextEpisodeTimerRef.current = setInterval(() => {
+      setCountdownSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(nextEpisodeTimerRef.current);
+          nextEpisodeTimerRef.current = null;
+          setShowNextOverlay(false);
+          if (onNextEpisodeRef.current) {
+            onNextEpisodeRef.current();
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (nextEpisodeTimerRef.current) {
+        clearInterval(nextEpisodeTimerRef.current);
+        nextEpisodeTimerRef.current = null;
+      }
+    };
+  }, [showNextOverlay]);
+
+  // Limpieza de temporizadores al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (nextEpisodeTimerRef.current) {
+        clearInterval(nextEpisodeTimerRef.current);
+        nextEpisodeTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // Volume: 0.0 a 2.0 (0% a 200%)
   const [volume, setVolume] = useState(1.0);
@@ -305,6 +413,18 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
       lastLocalSavedTimeRef.current = effectiveTime;
       saveLocalProgress(effectiveTime);
     }
+
+    // Autoplay Siguiente Episodio: cuando faltan 20 segundos o menos para terminar
+    const effectiveDuration = totalDuration || video.duration || 0;
+    if (
+      onNextEpisode &&
+      effectiveDuration > 0 &&
+      effectiveDuration - effectiveTime <= 20 &&
+      !dismissedNextEpisodeRef.current &&
+      !hasTriggeredNextEpisodeRef.current
+    ) {
+      triggerNextEpisodeOverlay();
+    }
   };
 
   const handlePause = () => {
@@ -323,6 +443,22 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
     const clampedTarget = Math.max(0, Math.min(targetSeconds, totalDuration || targetSeconds));
     if (volume > 1.0) {
       initWebAudio();
+    }
+
+    // Si el usuario rebobina antes de los últimos 20 segundos y el overlay estaba abierto
+    const effectiveDuration = totalDuration || video.duration || 0;
+    if (
+      effectiveDuration > 0 &&
+      effectiveDuration - clampedTarget > 20 &&
+      showNextOverlay &&
+      !dismissedNextEpisodeRef.current
+    ) {
+      setShowNextOverlay(false);
+      hasTriggeredNextEpisodeRef.current = false;
+      if (nextEpisodeTimerRef.current) {
+        clearInterval(nextEpisodeTimerRef.current);
+        nextEpisodeTimerRef.current = null;
+      }
     }
 
     if (isMkv) {
@@ -638,7 +774,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
         aria-label={`Reproductor: ${item.title || item.name}`}
         tabIndex={0}
         onWheel={handleWheel}
-        className={`relative z-10 flex flex-col justify-between bg-black select-none overflow-hidden outline-none pointer-events-auto transition-all duration-300 ${
+        className={`relative z-10 bg-black select-none overflow-hidden outline-none pointer-events-auto transition-all duration-300 ${
           isIdle ? 'cursor-none' : 'cursor-default'
         } ${
           isFullscreen
@@ -649,11 +785,11 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
         }`}
         style={isMiniMode ? { borderColor: accentColor } : undefined}
       >
-        {/* ================= BARRA SUPERIOR VLC ================= */}
+        {/* ================= BARRA SUPERIOR VLC FLOTANTE ================= */}
         {!isMiniMode && (
           <div
-            className={`absolute top-0 left-0 right-0 z-30 px-3 sm:px-5 py-3 sm:py-4 bg-gradient-to-b from-black/95 via-black/70 to-transparent transition-opacity duration-300 flex items-center justify-between pt-[max(0.75rem,env(safe-area-inset-top))] ${
-              isIdle ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+            className={`absolute top-0 inset-x-0 z-30 px-3 sm:px-5 py-3 sm:py-4 bg-gradient-to-b from-black/95 via-black/70 to-transparent transition-all duration-300 ease-in-out flex items-center justify-between pt-[max(0.75rem,env(safe-area-inset-top))] ${
+              isIdle ? 'opacity-0 -translate-y-2 pointer-events-none' : 'opacity-100 translate-y-0 pointer-events-auto'
             }`}
           >
             {/* Título y Badge */}
@@ -778,11 +914,11 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
           </div>
         )}
 
-        {/* ================= ÁREA DE VIDEO & ELEMENTO HTML5 ================= */}
+        {/* ================= ÁREA DE VIDEO & ELEMENTO HTML5 (FONDO COMPLETO) ================= */}
         <div
           onClick={handleVideoTouch}
           onDoubleClick={toggleFullscreen}
-          className="relative flex-1 w-full h-full flex items-center justify-center bg-black overflow-hidden"
+          className="absolute inset-0 w-full h-full flex items-center justify-center bg-black overflow-hidden z-0"
         >
           {/* ETIQUETA VIDEO NATIVA CON CLASES SOLICITADAS: w-full h-full object-contain bg-black */}
           <video
@@ -799,7 +935,11 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
             onPause={handlePause}
             onEnded={() => {
               setIsPlaying(false);
-              if (onNextEpisode) onNextEpisode();
+              if (onNextEpisode && !dismissedNextEpisodeRef.current) {
+                if (!hasTriggeredNextEpisodeRef.current) {
+                  triggerNextEpisodeOverlay();
+                }
+              }
             }}
             className="w-full h-full object-contain bg-black"
             playsInline
@@ -830,8 +970,8 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
           {/* CONTROLES TÁCTILES CENTRALES (Adelantar/Retroceder/Play) */}
           {!isMiniMode && (
             <div
-              className={`absolute inset-0 z-20 flex items-center justify-center gap-6 sm:gap-10 pointer-events-auto transition-opacity duration-300 ease-in-out ${
-                isIdle ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+              className={`absolute inset-0 z-20 flex items-center justify-center gap-6 sm:gap-10 pointer-events-auto transition-all duration-300 ease-in-out ${
+                isIdle ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100 pointer-events-auto'
               }`}
               onClick={(e) => e.stopPropagation()}
             >
@@ -869,13 +1009,12 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
           )}
         </div>
 
-        {/* ================= BARRA INFERIOR DE CONTROLES VLC ================= */}
+        {/* ================= BARRA INFERIOR DE CONTROLES FLOTANTE Y SEMITRANSPARENTE ================= */}
         {!isMiniMode && (
           <div
-            className={`relative z-30 border-t transition-opacity duration-300 ease-in-out p-3 sm:p-5 text-slate-200 pb-[max(0.75rem,env(safe-area-inset-bottom))] ${
-              isIdle ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+            className={`absolute bottom-0 inset-x-0 z-30 transition-all duration-300 ease-in-out p-3 sm:p-5 text-slate-200 bg-gradient-to-t from-black/95 via-black/80 to-transparent pb-[max(1rem,env(safe-area-inset-bottom))] pointer-events-auto select-none ${
+              isIdle ? 'opacity-0 translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0 pointer-events-auto'
             }`}
-            style={{ backgroundColor: surfaceColor, borderColor }}
           >
             {/* 1. Scrubbing Bar de Progreso Adaptada a Móvil */}
             <div className="space-y-1.5 mb-2.5">
@@ -948,7 +1087,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
                 {onNextEpisode && (
                   <button
                     type="button"
-                    onClick={onNextEpisode}
+                    onClick={handlePlayNextEpisodeNow}
                     aria-label="Siguiente episodio"
                     className="min-h-11 px-3 flex items-center gap-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors text-xs font-bold"
                   >
@@ -1166,6 +1305,109 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode }) {
               </div>
             </div>
           </div>
+        )}
+
+        {/* ================= OVERLAY AUTOPLAY SIGUIENTE EPISODIO (ESTILO NETFLIX) ================= */}
+        {showNextOverlay && !isMiniMode && (
+          <aside
+            role="region"
+            aria-label="Siguiente episodio"
+            onClick={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="absolute bottom-20 sm:bottom-24 right-3 sm:right-6 z-50 w-[calc(100%-1.5rem)] max-w-sm sm:max-w-md bg-black/90 border border-slate-700 backdrop-blur-md rounded-2xl p-4 shadow-2xl animate-fade-in pointer-events-auto cursor-default"
+          >
+            {/* Barra de progreso de cuenta regresiva */}
+            <div className="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-3">
+              <div
+                className="h-full bg-red-600 transition-all duration-1000 ease-linear rounded-full"
+                style={{
+                  width: `${(countdownSeconds / NEXT_EPISODE_COUNTDOWN_DURATION) * 100}%`
+                }}
+              />
+            </div>
+
+            {/* Cabecera del Overlay */}
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping shrink-0" />
+                <span className="text-xs sm:text-sm font-bold text-slate-200 truncate">
+                  Siguiente episodio en{' '}
+                  <span className="font-mono text-red-500 font-extrabold text-sm sm:text-base">
+                    {countdownSeconds}s
+                  </span>
+                  ...
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCancelNextEpisode}
+                aria-label="Descartar siguiente episodio"
+                className="p-1 -mr-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Información del Siguiente Episodio (si existe prop nextEpisode) */}
+            {nextEpisode && (
+              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white/5 border border-white/5 mb-3.5">
+                {/* Miniatura con fallback */}
+                {nextEpisode.posterUrl && !nextThumbError ? (
+                  <img
+                    src={nextEpisode.posterUrl}
+                    alt={nextEpisode.title || nextEpisode.name || 'Siguiente episodio'}
+                    className="w-16 h-12 sm:w-20 sm:h-14 rounded-lg object-cover bg-slate-900 border border-slate-700/80 shrink-0 shadow-md"
+                    onError={() => setNextThumbError(true)}
+                  />
+                ) : (
+                  <div className="w-16 h-12 sm:w-20 sm:h-14 rounded-lg bg-slate-800/90 border border-slate-700/80 flex flex-col items-center justify-center shrink-0 text-slate-400 shadow-inner">
+                    <Play className="w-4 h-4 text-red-500 fill-current mb-0.5" />
+                    {nextEpisode.episode !== undefined && nextEpisode.episode !== null && (
+                      <span className="text-[10px] font-mono font-bold text-slate-300">
+                        E{nextEpisode.episode}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Título y Temporada/Episodio */}
+                <div className="min-w-0 flex-1">
+                  {(nextEpisode.season !== undefined || nextEpisode.episode !== undefined) && (
+                    <div className="text-[10px] sm:text-[11px] font-mono font-bold text-red-400 uppercase tracking-wide truncate">
+                      {nextEpisode.season !== undefined && `Temporada ${nextEpisode.season}`}
+                      {nextEpisode.season !== undefined && nextEpisode.episode !== undefined && ' • '}
+                      {nextEpisode.episode !== undefined && `Episodio ${nextEpisode.episode}`}
+                    </div>
+                  )}
+                  <div className="text-xs sm:text-sm font-bold text-white truncate drop-shadow mt-0.5">
+                    {nextEpisode.title || nextEpisode.cleanTitle || nextEpisode.name || 'Siguiente episodio'}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Botones Primario y Secundario */}
+            <div className="flex items-center gap-2 pt-1 border-t border-slate-800/80">
+              <button
+                type="button"
+                onClick={handlePlayNextEpisodeNow}
+                className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-lg shadow-red-600/30 transition-all cursor-pointer min-h-[40px]"
+              >
+                <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" />
+                <span>Reproducir Ahora</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCancelNextEpisode}
+                className="flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 active:scale-95 text-slate-300 hover:text-white font-semibold text-xs sm:text-sm transition-all border border-slate-700/80 cursor-pointer min-h-[40px]"
+              >
+                <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span>Cancelar</span>
+              </button>
+            </div>
+          </aside>
         )}
       </div>
     </div>,

@@ -3,8 +3,112 @@
  * Con interceptor global de red para detección de servidor local offline.
  */
 
-const rawBase = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? window.location.origin : '');
-export const API_BASE = rawBase.replace(/\/$/, '');
+/**
+ * API Client for CloudMedia Hub Frontend
+ * Con Sistema de Doble Servidor (Auto-Descubrimiento, Failover dinámico y Tolerancia a Fallos).
+ */
+
+// ================= 1. NUEVAS VARIABLES DE ENTORNO =================
+// VITE_API_URL_LOCAL: Túnel de la PC base
+// VITE_API_URL_VPS: Servidor Oracle Cloud de respaldo
+const rawLocal = (
+  import.meta.env.VITE_API_URL_LOCAL ||
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001')
+).replace(/\/$/, '');
+
+const rawVps = (
+  import.meta.env.VITE_API_URL_VPS ||
+  ''
+).replace(/\/$/, '');
+
+export const SERVERS = {
+  local: {
+    id: 'local',
+    name: 'PC Base (Local)',
+    shortName: 'Local',
+    url: rawLocal,
+    icon: '💻'
+  },
+  vps: {
+    id: 'vps',
+    name: 'Oracle Cloud (VPS)',
+    shortName: 'VPS',
+    url: rawVps || rawLocal,
+    icon: '☁️'
+  }
+};
+
+const SERVER_STORAGE_KEY = 'cmh_active_server_mode'; // 'auto' | 'local' | 'vps'
+
+let currentMode = (typeof localStorage !== 'undefined' && localStorage.getItem(SERVER_STORAGE_KEY)) || 'auto';
+let activeServerKey = currentMode !== 'auto' && SERVERS[currentMode] ? currentMode : 'local';
+let activeBaseUrl = SERVERS[activeServerKey]?.url || rawLocal;
+
+export let API_BASE = activeBaseUrl;
+
+export function getActiveBaseUrl() {
+  return activeBaseUrl;
+}
+
+const serverLatencies = {
+  local: null,
+  vps: null
+};
+
+const serverChangeListeners = new Set();
+
+function notifyServerChange() {
+  API_BASE = activeBaseUrl;
+  const currentInfo = getActiveServerInfo();
+  serverChangeListeners.forEach((listener) => {
+    try {
+      listener(currentInfo);
+    } catch (e) {
+      console.error('Error en listener de cambio de servidor:', e);
+    }
+  });
+}
+
+export function subscribeServerChange(listener) {
+  serverChangeListeners.add(listener);
+  return () => serverChangeListeners.delete(listener);
+}
+
+export function getActiveServerInfo() {
+  return {
+    mode: currentMode,
+    activeKey: activeServerKey,
+    activeServer: SERVERS[activeServerKey] || SERVERS.local,
+    baseUrl: activeBaseUrl,
+    hasVps: Boolean(rawVps && rawVps !== rawLocal),
+    servers: SERVERS,
+    latencies: { ...serverLatencies }
+  };
+}
+
+export function setActiveServerMode(newMode) {
+  if (newMode !== 'auto' && newMode !== 'local' && newMode !== 'vps') {
+    newMode = 'auto';
+  }
+  currentMode = newMode;
+  try {
+    localStorage.setItem(SERVER_STORAGE_KEY, newMode);
+  } catch (e) {}
+
+  if (newMode === 'local') {
+    activeServerKey = 'local';
+    activeBaseUrl = SERVERS.local.url;
+    notifyServerChange();
+  } else if (newMode === 'vps' && SERVERS.vps.url) {
+    activeServerKey = 'vps';
+    activeBaseUrl = SERVERS.vps.url;
+    notifyServerChange();
+  } else {
+    // Modo automático: correr carrera de ping
+    runServerRace().catch(() => {});
+  }
+}
 
 // ================= GESTOR GLOBAL DE ESTADO OFFLINE =================
 let isServerOffline = false;
@@ -61,10 +165,127 @@ function getAuthHeaders(extraHeaders = {}) {
   return headers;
 }
 
+// ================= 2. GESTOR DINÁMICO DE CONEXIÓN & CARRERA DE RED =================
+
 /**
- * Interceptor centralizado de fetch con timeout y detección offline
+ * Ping rápido a /api/stats con timeout corto de 2.5s
  */
-export async function apiFetch(url, options = {}) {
+export async function pingServer(serverKey) {
+  const srv = SERVERS[serverKey];
+  if (!srv || !srv.url) return { ok: false, latency: null };
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 2500);
+  const startTime = Date.now();
+  try {
+    const res = await fetch(`${srv.url}/api/stats?_ping=${Date.now()}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      signal: controller.signal,
+      cache: 'no-store'
+    });
+    clearTimeout(timeoutId);
+    const latency = Date.now() - startTime;
+    serverLatencies[serverKey] = latency;
+    // status 200 o 401 (servidor responde y autentica) confirman que el servidor está online
+    const isOnline = res.status === 200 || res.status === 401;
+    return { ok: isOnline, latency, status: res.status };
+  } catch {
+    clearTimeout(timeoutId);
+    serverLatencies[serverKey] = null;
+    return { ok: false, latency: null };
+  }
+}
+
+/**
+ * Carrera de red (Auto-Discovery):
+ * Hace ping simultáneo a /api/stats de ambos servidores con timeout de 2.5s.
+ * El servidor que responda primero con éxito gana la carrera y se fija como activeBaseUrl.
+ * Si el usuario seleccionó un servidor manualmente, respeta esa elección.
+ */
+export async function runServerRace() {
+  // Si el usuario seleccionó un servidor manualmente en localStorage, respetarlo
+  if (currentMode !== 'auto' && SERVERS[currentMode]) {
+    activeServerKey = currentMode;
+    activeBaseUrl = SERVERS[currentMode].url;
+    notifyServerChange();
+    return getActiveServerInfo();
+  }
+
+  // Si no hay VPS configurado o es igual al local, mantenerse en local
+  if (!rawVps || rawVps === rawLocal) {
+    activeServerKey = 'local';
+    activeBaseUrl = SERVERS.local.url;
+    notifyServerChange();
+    return getActiveServerInfo();
+  }
+
+  try {
+    // Carrera de promesas: el que responda primero positivamente gana
+    const racePromise = Promise.any([
+      pingServer('local').then((res) => {
+        if (!res.ok) throw new Error('Local falló');
+        return 'local';
+      }),
+      pingServer('vps').then((res) => {
+        if (!res.ok) throw new Error('VPS falló');
+        return 'vps';
+      })
+    ]);
+
+    const winnerKey = await racePromise;
+    activeServerKey = winnerKey;
+    activeBaseUrl = SERVERS[winnerKey].url;
+    notifyServerChange();
+    console.info(`[Auto-Discovery] ⚡ Servidor más rápido fijado: ${winnerKey.toUpperCase()} (${activeBaseUrl})`);
+  } catch {
+    console.warn('[Auto-Discovery] Ambos servidores fallaron en la carrera inicial de ping');
+  }
+
+  return getActiveServerInfo();
+}
+
+/**
+ * Conmuta automáticamente al servidor de respaldo
+ */
+function failoverToBackupServer() {
+  const previousKey = activeServerKey;
+  const backupKey = previousKey === 'local' ? 'vps' : 'local';
+
+  // Solo conmutar si el backup tiene URL válida y distinta
+  if (SERVERS[backupKey].url && SERVERS[backupKey].url !== SERVERS[previousKey].url) {
+    console.warn(`[Failover Interceptor] ⚠️ Conmutando automáticamente de ${previousKey.toUpperCase()} a ${backupKey.toUpperCase()} (${SERVERS[backupKey].url})`);
+    activeServerKey = backupKey;
+    activeBaseUrl = SERVERS[backupKey].url;
+    notifyServerChange();
+    return true;
+  }
+  return false;
+}
+
+function resolveRequestUrl(pathOrUrl, currentBase) {
+  if (typeof pathOrUrl !== 'string') return pathOrUrl;
+
+  if (!pathOrUrl.startsWith('http://') && !pathOrUrl.startsWith('https://')) {
+    return `${currentBase}${pathOrUrl.startsWith('/') ? '' : '/'}${pathOrUrl}`;
+  }
+
+  // Si es URL absoluta que coincide con algún servidor conocido (Local o VPS),
+  // asegurar que se redirija al currentBase activo
+  for (const srvKey of ['local', 'vps']) {
+    const srvUrl = SERVERS[srvKey]?.url;
+    if (srvUrl && pathOrUrl.startsWith(srvUrl)) {
+      return `${currentBase}${pathOrUrl.slice(srvUrl.length)}`;
+    }
+  }
+
+  return pathOrUrl;
+}
+
+// ================= 3. INTERCEPTOR DE FAILOVER (TOLERANCIA A FALLOS) =================
+/**
+ * Interceptor centralizado de fetch con timeout, auto-failover y detección offline
+ */
+export async function apiFetch(pathOrUrl, options = {}) {
   const timeoutMs = options.timeout ?? 10000;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -76,8 +297,10 @@ export async function apiFetch(url, options = {}) {
     signal: options.signal || controller.signal
   };
 
+  const targetUrl = resolveRequestUrl(pathOrUrl, activeBaseUrl);
+
   try {
-    const res = await fetch(url, fetchOptions);
+    const res = await fetch(targetUrl, fetchOptions);
     clearTimeout(timeoutId);
 
     // Si recibimos respuesta del servidor, el backend está encendido
@@ -89,8 +312,32 @@ export async function apiFetch(url, options = {}) {
   } catch (err) {
     clearTimeout(timeoutId);
 
+    // Interceptor de Failover: si falla por error de red y NO hemos reintentado todavía
+    if (isNetworkError(err) && !options._isRetry) {
+      const switched = failoverToBackupServer();
+      if (switched) {
+        try {
+          const retryUrl = resolveRequestUrl(pathOrUrl, activeBaseUrl);
+          const retryOptions = {
+            ...options,
+            _isRetry: true
+          };
+          console.info(`[Failover Interceptor] 🔄 Reintentando petición en ${activeServerKey.toUpperCase()}: ${retryUrl}`);
+          return await apiFetch(retryUrl, retryOptions);
+        } catch (retryErr) {
+          // Solo si el segundo servidor TAMBIÉN falla, se dispara isServerOffline
+          if (isNetworkError(retryErr)) {
+            console.error('[Failover Interceptor] ❌ Ambos servidores (Local y VPS) fallaron:', retryErr.message);
+            setServerOfflineState(true);
+          }
+          throw retryErr;
+        }
+      }
+    }
+
+    // Si ya era reintento o no hay servidor de respaldo
     if (isNetworkError(err)) {
-      console.warn('[API Interceptor] Servidor local offline o inalcanzable:', err.message);
+      console.warn('[API Interceptor] Servidor inalcanzable:', err.message);
       setServerOfflineState(true);
     }
     throw err;
@@ -101,24 +348,40 @@ export async function apiFetch(url, options = {}) {
  * Función para comprobar si el servidor ya volvió a encender
  */
 export async function checkServerConnection() {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(`${API_BASE}/api/stats/system?_t=${Date.now()}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-    if (res.status > 0) {
-      setServerOfflineState(false);
-      return true;
+  for (const srvKey of [activeServerKey, activeServerKey === 'local' ? 'vps' : 'local']) {
+    const srv = SERVERS[srvKey];
+    if (!srv?.url) continue;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const res = await fetch(`${srv.url}/api/stats/system?_t=${Date.now()}`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (res.status > 0) {
+        if (srvKey !== activeServerKey) {
+          activeServerKey = srvKey;
+          activeBaseUrl = srv.url;
+          notifyServerChange();
+        }
+        setServerOfflineState(false);
+        return true;
+      }
+    } catch {
+      // Intentar siguiente
     }
-  } catch {
-    // Sigue offline
   }
   setServerOfflineState(true);
   return false;
+}
+
+// Inicializar carrera de auto-descubrimiento en segundo plano en navegador
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    runServerRace().catch(() => {});
+  }, 100);
 }
 
 // ================= AUTH =================
@@ -290,7 +553,7 @@ export function getDownloadUrl(filePath) {
   if (token) {
     query.set('token', token);
   }
-  return `${API_BASE}/api/files/download?${query.toString()}`;
+  return `${getActiveBaseUrl()}/api/files/download?${query.toString()}`;
 }
 
 export function uploadFile(destinationPath, file, onProgress, classification = {}) {
@@ -313,7 +576,7 @@ export function uploadFile(destinationPath, file, onProgress, classification = {
       formData.append('episodeNumber', classification.episodeNumber);
     }
 
-    xhr.open('POST', `${API_BASE}/api/files/upload`);
+    xhr.open('POST', `${getActiveBaseUrl()}/api/files/upload`);
     const token = localStorage.getItem('cmh_token');
     if (token) {
       xhr.setRequestHeader('Authorization', `Bearer ${token}`);
@@ -376,11 +639,11 @@ export function getStreamUrl(mediaPath, audioTrackIndex = null, remux = false, s
   if (token) {
     params.set('token', token);
   }
-  return `${API_BASE}/api/stream?${params.toString()}`;
+  return `${getActiveBaseUrl()}/api/stream?${params.toString()}`;
 }
 
 export function getThumbnailUrl(mediaPath) {
-  return `${API_BASE}/api/thumbnail?path=${encodeURIComponent(mediaPath)}`;
+  return `${getActiveBaseUrl()}/api/thumbnail?path=${encodeURIComponent(mediaPath)}`;
 }
 
 export function getSubtitleUrl(mediaPath, subtitleTrackIndex = 0, start = 0) {
@@ -395,7 +658,7 @@ export function getSubtitleUrl(mediaPath, subtitleTrackIndex = 0, start = 0) {
   if (token) {
     params.set('token', token);
   }
-  return `${API_BASE}/api/stream/subtitles?${params.toString()}`;
+  return `${getActiveBaseUrl()}/api/stream/subtitles?${params.toString()}`;
 }
 
 export async function fetchMediaInfo(mediaPath) {
@@ -480,6 +743,71 @@ export async function saveWatchProgress({ path: mediaPath, currentTime, duration
   });
   if (!res.ok) return null;
   return await res.json();
+}
+
+// ================= FAVORITES (MI LISTA) =================
+export async function fetchFavorites() {
+  try {
+    const res = await apiFetch(`${API_BASE}/api/favorites`);
+    if (res.ok) {
+      const data = await res.json();
+      const list = Array.isArray(data.favorites) ? data.favorites : [];
+      try {
+        localStorage.setItem('cmh_favorites', JSON.stringify(list));
+      } catch (e) {}
+      return list;
+    }
+  } catch (err) {
+    console.warn('[Favorites] Error en fetchFavorites, usando fallback local:', err);
+  }
+
+  // Fallback a localStorage
+  try {
+    const saved = localStorage.getItem('cmh_favorites');
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function toggleFavorite(mediaPath) {
+  try {
+    const res = await apiFetch(`${API_BASE}/api/favorites/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: mediaPath })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      try {
+        if (Array.isArray(data.favorites)) {
+          localStorage.setItem('cmh_favorites', JSON.stringify(data.favorites));
+        }
+      } catch (e) {}
+      return data;
+    }
+  } catch (err) {
+    console.warn('[Favorites] Error en toggleFavorite backend, aplicando fallback local:', err);
+  }
+
+  // Fallback local en localStorage
+  try {
+    const saved = localStorage.getItem('cmh_favorites');
+    let list = saved ? JSON.parse(saved) : [];
+    const index = list.indexOf(mediaPath);
+    let isFavorite = false;
+    if (index > -1) {
+      list.splice(index, 1);
+      isFavorite = false;
+    } else {
+      list.push(mediaPath);
+      isFavorite = true;
+    }
+    localStorage.setItem('cmh_favorites', JSON.stringify(list));
+    return { isFavorite, favorites: list };
+  } catch {
+    return { isFavorite: false, favorites: [] };
+  }
 }
 
 // ================= USERS (ADMIN) =================

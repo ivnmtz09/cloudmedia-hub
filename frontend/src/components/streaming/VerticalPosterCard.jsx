@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
-import { Film, Tv, Play, Star } from 'lucide-react';
+import { Film, Tv, Play, Star, Bookmark } from 'lucide-react';
 import { getThumbnailUrl } from '../../services/api';
 
-export default function VerticalPosterCard({ item, metadata = {}, onClick }) {
+export default function VerticalPosterCard({
+  item,
+  metadata = {},
+  isFavorite = false,
+  onToggleFavorite,
+  onClick
+}) {
   const [imgError, setImgError] = useState(false);
 
   const meta = metadata[item.path] || item.metadata || {};
@@ -54,8 +60,8 @@ export default function VerticalPosterCard({ item, metadata = {}, onClick }) {
           </div>
         </div>
 
-        {/* Badge de tipo y rating */}
-        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+        {/* Badge de tipo */}
+        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10 pointer-events-none">
           <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider backdrop-blur-md border shadow-sm ${
             isAnime
               ? 'bg-purple-950/80 text-purple-300 border-purple-500/40'
@@ -67,14 +73,34 @@ export default function VerticalPosterCard({ item, metadata = {}, onClick }) {
           </span>
         </div>
 
-        {rating && (
-          <div className="absolute top-2.5 right-2.5">
-            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-dark-950/85 backdrop-blur-md border border-amber-500/40 text-[10px] font-bold text-amber-300 shadow-sm">
+        {/* Rating y Botón Favorito */}
+        <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
+          {rating && (
+            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-dark-950/85 backdrop-blur-md border border-amber-500/40 text-[10px] font-bold text-amber-300 shadow-sm pointer-events-none">
               <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
               {rating}
             </span>
-          </div>
-        )}
+          )}
+
+          {onToggleFavorite && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFavorite(item);
+              }}
+              className={`p-1.5 rounded-full backdrop-blur-md border transition-all duration-200 cursor-pointer ${
+                isFavorite
+                  ? 'bg-red-600/90 text-white border-red-500 shadow-md shadow-red-600/40 scale-100 opacity-100'
+                  : 'bg-dark-950/80 text-slate-300 border-white/10 hover:text-white hover:bg-dark-900/95 hover:scale-110 opacity-75 sm:opacity-0 group-hover:opacity-100'
+              }`}
+              title={isFavorite ? 'Quitar de Mi Lista' : 'Guardar en Mi Lista'}
+              aria-label={isFavorite ? 'Quitar de Mi Lista' : 'Guardar en Mi Lista'}
+            >
+              <Bookmark className={`w-3.5 h-3.5 ${isFavorite ? 'fill-current' : ''}`} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 2. Textos Debajo del Póster: Solo Título Limpio y Año */}
