@@ -37,11 +37,38 @@
   },
   "1:Peliculas/Justice League The Flashpoint Paradox HD 698.20 MB.mkv": {
     "path": "Peliculas/Justice League The Flashpoint Paradox HD 698.20 MB.mkv",
-    "currentTime": 1540.620186,
+    "currentTime": 1632.202744,
     "duration": 4874.7,
-    "percentage": 32,
+    "percentage": 33,
     "season": null,
     "episode": null,
-    "updatedAt": "2026-10-27T23:29:39.515Z"
+    "updatedAt": "2026-10-28T18:47:32.154Z"
+  },
+  "1:Peliculas/Avengers Era de Ultrón 1080p HDR DUAL 6.28 GB.mkv": {
+    "path": "Peliculas/Avengers Era de Ultrón 1080p HDR DUAL 6.28 GB.mkv",
+    "currentTime": 9.245009,
+    "duration": 8478.208,
+    "percentage": 0,
+    "season": null,
+    "episode": null,
+    "updatedAt": "2026-10-28T21:54:31.268Z"
+  },
+  "1:Peliculas/Iron man 1 1080p HDR DUAL 5.61 GB.mkv": {
+    "path": "Peliculas/Iron man 1 1080p HDR DUAL 5.61 GB.mkv",
+    "currentTime": 5.024,
+    "duration": 7561.321,
+    "percentage": 0,
+    "season": null,
+    "episode": null,
+    "updatedAt": "2026-10-28T21:55:02.556Z"
+  },
+  "1:Peliculas/Iron man.2 1080p HDR DUAL 5.43 GB.mkv": {
+    "path": "Peliculas/Iron man.2 1080p HDR DUAL 5.43 GB.mkv",
+    "currentTime": 4.926307,
+    "duration": 7474.656,
+    "percentage": 0,
+    "season": null,
+    "episode": null,
+    "updatedAt": "2026-10-28T21:55:21.782Z"
   }
 }

@@ -461,13 +461,15 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode, nextEpi
       }
     }
 
-    if (isMkv) {
+    const isDriveStream = Boolean(item?.fileId || item?.streamUrl || item?.webContentLink);
+
+    if (isMkv && !isDriveStream) {
       setIsBuffering(true);
       setTimeOffset(clampedTarget);
       setCurrentTime(clampedTarget);
 
       const wasPlaying = !video.paused;
-      const newSrc = getStreamUrl(item.path, selectedTrackIndex, true, clampedTarget);
+      const newSrc = getStreamUrl(item, selectedTrackIndex, true, clampedTarget);
       video.src = newSrc;
       video.load();
 
@@ -721,7 +723,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode, nextEpi
     seekTo(currentTime);
   };
 
-  const streamSrc = getStreamUrl(item.path, selectedTrackIndex, isMkv, timeOffset);
+  const streamSrc = getStreamUrl(item, selectedTrackIndex, isMkv, timeOffset);
   const remainingSeconds = Math.max(0, (totalDuration || 0) - currentTime);
 
   // Subtítulos

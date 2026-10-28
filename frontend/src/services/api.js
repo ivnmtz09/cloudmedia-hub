@@ -8,13 +8,13 @@
  * Con Sistema de Doble Servidor (Auto-Descubrimiento, Failover dinámico y Tolerancia a Fallos).
  */
 
-// ================= 1. NUEVAS VARIABLES DE ENTORNO =================
-// VITE_API_URL_LOCAL: Túnel de la PC base
-// VITE_API_URL_VPS: Servidor Oracle Cloud de respaldo
+// ================= 1. VARIABLES DE ENTORNO SERVERLESS VERCEL =================
+// Por defecto en Vercel, las peticiones utilizan rutas relativas ('/api/...').
+// Si se especifica VITE_API_URL o VITE_API_URL_LOCAL en desarrollo, se utiliza esa URL base.
 const rawLocal = (
-  import.meta.env.VITE_API_URL_LOCAL ||
   import.meta.env.VITE_API_URL ||
-  (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001')
+  import.meta.env.VITE_API_URL_LOCAL ||
+  ''
 ).replace(/\/$/, '');
 
 const rawVps = (
@@ -23,18 +23,25 @@ const rawVps = (
 ).replace(/\/$/, '');
 
 export const SERVERS = {
+  vercel: {
+    id: 'vercel',
+    name: 'Vercel Serverless (Google Drive API)',
+    shortName: 'Serverless',
+    url: '',
+    icon: '⚡'
+  },
   local: {
     id: 'local',
     name: 'PC Base (Local)',
     shortName: 'Local',
-    url: rawLocal,
+    url: rawLocal || '',
     icon: '💻'
   },
   vps: {
     id: 'vps',
     name: 'Oracle Cloud (VPS)',
     shortName: 'VPS',
-    url: rawVps || rawLocal,
+    url: rawVps || rawLocal || '',
     icon: '☁️'
   }
 };
@@ -42,8 +49,8 @@ export const SERVERS = {
 const SERVER_STORAGE_KEY = 'cmh_active_server_mode'; // 'auto' | 'local' | 'vps'
 
 let currentMode = (typeof localStorage !== 'undefined' && localStorage.getItem(SERVER_STORAGE_KEY)) || 'auto';
-let activeServerKey = currentMode !== 'auto' && SERVERS[currentMode] ? currentMode : 'local';
-let activeBaseUrl = SERVERS[activeServerKey]?.url || rawLocal;
+let activeServerKey = currentMode !== 'auto' && SERVERS[currentMode] ? currentMode : 'vercel';
+let activeBaseUrl = SERVERS[activeServerKey]?.url ?? rawLocal;
 
 export let API_BASE = activeBaseUrl;
 
@@ -624,7 +631,40 @@ export function uploadFile(destinationPath, file, onProgress, classification = {
 }
 
 // ================= STREAMING & MEDIA INFO =================
-export function getStreamUrl(mediaPath, audioTrackIndex = null, remux = false, start = 0) {
+export function getStreamUrl(itemOrPath, audioTrackIndex = null, remux = false, start = 0) {
+  // 1. Si es un objeto de medio directo de Google Drive API
+  if (itemOrPath && typeof itemOrPath === 'object') {
+    if (itemOrPath.streamUrl) {
+      return itemOrPath.streamUrl.startsWith('http') || !getActiveBaseUrl()
+        ? itemOrPath.streamUrl
+        : `${getActiveBaseUrl()}${itemOrPath.streamUrl}`;
+    }
+    if (itemOrPath.fileId || itemOrPath.id) {
+      const fileId = itemOrPath.fileId || itemOrPath.id;
+      const base = getActiveBaseUrl();
+      return `${base}/api/stream?fileId=${encodeURIComponent(fileId)}`;
+    }
+    if (itemOrPath.webContentLink) {
+      return itemOrPath.webContentLink;
+    }
+    if (itemOrPath.directDriveUrl) {
+      return itemOrPath.directDriveUrl;
+    }
+  }
+
+  // 2. Si es una cadena (ruta o ID directo de archivo)
+  const mediaPath = typeof itemOrPath === 'string' ? itemOrPath : (itemOrPath?.path || '');
+
+  if (mediaPath.startsWith('http://') || mediaPath.startsWith('https://')) {
+    return mediaPath;
+  }
+
+  // Si es un ID de archivo de Google Drive (alfanumérico largo)
+  if (/^[a-zA-Z0-9_-]{25,}$/.test(mediaPath)) {
+    const base = getActiveBaseUrl();
+    return `${base}/api/stream?fileId=${encodeURIComponent(mediaPath)}`;
+  }
+
   const token = localStorage.getItem('cmh_token');
   const params = new URLSearchParams({ path: mediaPath });
   if (audioTrackIndex !== null && audioTrackIndex !== undefined) {
@@ -642,7 +682,12 @@ export function getStreamUrl(mediaPath, audioTrackIndex = null, remux = false, s
   return `${getActiveBaseUrl()}/api/stream?${params.toString()}`;
 }
 
-export function getThumbnailUrl(mediaPath) {
+export function getThumbnailUrl(itemOrPath) {
+  if (itemOrPath && typeof itemOrPath === 'object') {
+    if (itemOrPath.thumbnailLink) return itemOrPath.thumbnailLink;
+    if (itemOrPath.poster_path) return itemOrPath.poster_path;
+  }
+  const mediaPath = typeof itemOrPath === 'string' ? itemOrPath : (itemOrPath?.path || '');
   return `${getActiveBaseUrl()}/api/thumbnail?path=${encodeURIComponent(mediaPath)}`;
 }
 
@@ -662,7 +707,7 @@ export function getSubtitleUrl(mediaPath, subtitleTrackIndex = 0, start = 0) {
 }
 
 export async function fetchMediaInfo(mediaPath) {
-  const res = await apiFetch(`${API_BASE}/api/media-info?path=${encodeURIComponent(mediaPath)}`);
+  const res = await apiFetch(`/api/media-info?path=${encodeURIComponent(mediaPath)}`);
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     throw new Error(errorData.error || 'Error al obtener la información técnica del video');
@@ -670,15 +715,21 @@ export async function fetchMediaInfo(mediaPath) {
   return await res.json();
 }
 
-export async function fetchCatalog() {
-  const res = await apiFetch(`${API_BASE}/api/media/catalog`);
-  if (!res.ok) throw new Error('Error al obtener el catálogo de medios');
-  return await res.json();
+export async function fetchCatalog(folderId = null) {
+  const query = folderId ? `?folderId=${encodeURIComponent(folderId)}` : '';
+  const res = await apiFetch(`/api/catalog${query}`);
+  if (res.ok) {
+    return await res.json();
+  }
+  // Fallback para entornos con backend tradicional
+  const fallback = await apiFetch(`/api/media/catalog`).catch(() => null);
+  if (fallback && fallback.ok) return await fallback.json();
+  throw new Error('Error al obtener el catálogo de medios');
 }
 
 // ================= METADATA & SERIES =================
 export async function fetchMetadata(itemPath = null) {
-  const url = `${API_BASE}/api/metadata${itemPath ? `?path=${encodeURIComponent(itemPath)}` : ''}`;
+  const url = `/api/metadata${itemPath ? `?path=${encodeURIComponent(itemPath)}` : ''}`;
   const res = await apiFetch(url);
   if (!res.ok) return {};
   const data = await res.json();
@@ -686,26 +737,26 @@ export async function fetchMetadata(itemPath = null) {
 }
 
 export async function fetchMediaItemMetadata(itemPath, name = '', isDir = false) {
-  const params = new URLSearchParams({ path: itemPath });
-  if (name) params.set('name', name);
-  if (isDir) params.set('isDir', 'true');
-  const res = await apiFetch(`${API_BASE}/api/metadata/item?${params.toString()}`);
+  const clean = name || (itemPath ? itemPath.split('/').pop() : '');
+  const params = new URLSearchParams({ title: clean, path: itemPath || '' });
+  if (isDir) params.set('type', 'serie');
+  const res = await apiFetch(`/api/metadata?${params.toString()}`);
   if (!res.ok) return null;
   const data = await res.json();
-  return data.metadata || null;
+  return data.metadata || data.item || null;
 }
 
 // ================= AI CHAT (GEMINI + TMDB + SEARCH) =================
-export async function sendChatMessage(message, history = []) {
-  const res = await apiFetch(`${API_BASE}/api/chat`, {
+export async function sendChatMessage(message, history = [], catalog = []) {
+  const res = await apiFetch(`/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, history })
+    body: JSON.stringify({ message, history, catalog })
   });
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Error al comunicarse con CloudMedia AI');
+    throw new Error(errorData.error || 'Error al comunicarse con CloudMedIA');
   }
 
   return await res.json();
