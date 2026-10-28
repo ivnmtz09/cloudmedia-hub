@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Film, Tv, Video, RefreshCw, Sparkles, Clock, Play,
-  LayoutGrid, Filter, Search, Bookmark
+  LayoutGrid, Filter, Search
 } from 'lucide-react';
 import HeroBanner from './HeroBanner';
 import VerticalPosterCard from './VerticalPosterCard';
@@ -13,8 +13,6 @@ import {
   fetchCatalog,
   fetchMetadata,
   fetchWatchProgress,
-  fetchFavorites,
-  toggleFavorite,
   syncMetadata
 } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -32,8 +30,7 @@ export default function StreamingView({ addToast }) {
   });
   const [metadata, setMetadata] = useState({});
   const [watchProgress, setWatchProgress] = useState({});
-  const [favorites, setFavorites] = useState([]);
-  const [selectedFilter, setSelectedFilter] = useState('all'); // 'all', 'favorites', 'movies', 'series', 'anime', 'personal'
+  const [selectedFilter, setSelectedFilter] = useState('all'); // 'all', 'movies', 'series', 'anime', 'personal'
   const [loading, setLoading] = useState(true);
   const [isSyncingMeta, setIsSyncingMeta] = useState(false);
   const [activeMedia, setActiveMedia] = useState(null);
@@ -42,17 +39,15 @@ export default function StreamingView({ addToast }) {
   const loadAll = async () => {
     try {
       setLoading(true);
-      const [catData, metaData, progData, favsData] = await Promise.all([
+      const [catData, metaData, progData] = await Promise.all([
         fetchCatalog().catch(() => ({ movies: [], series: [], anime: [], personal: [], all: [] })),
         fetchMetadata().catch(() => ({})),
-        fetchWatchProgress().catch(() => ({})),
-        fetchFavorites().catch(() => [])
+        fetchWatchProgress().catch(() => ({}))
       ]);
 
       setCatalog(catData);
       setMetadata(metaData || {});
       setWatchProgress(progData || {});
-      setFavorites(Array.isArray(favsData) ? favsData : []);
     } catch (err) {
       console.error('Error cargando catálogo:', err);
       if (addToast) {
@@ -71,23 +66,6 @@ export default function StreamingView({ addToast }) {
     loadAll();
   }, [user]);
 
-  const handleToggleFavorite = async (item) => {
-    try {
-      const res = await toggleFavorite(item.path);
-      if (res && Array.isArray(res.favorites)) {
-        setFavorites(res.favorites);
-        if (addToast) {
-          addToast({
-            type: 'info',
-            title: res.isFavorite ? 'Añadido a Mi Lista' : 'Eliminado de Mi Lista',
-            message: item.cleanTitle || item.name || item.title
-          });
-        }
-      }
-    } catch (err) {
-      console.error('Error alternando favorito:', err);
-    }
-  };
 
   const handleSyncMeta = async () => {
     try {
@@ -138,32 +116,8 @@ export default function StreamingView({ addToast }) {
 
   const allItems = [...movies, ...series, ...anime, ...personal];
 
-  const favoriteItems = favorites
-    .map((pathKey) => {
-      const found = allItems.find((i) => i.path === pathKey);
-      if (found) return found;
-      const meta = metadata[pathKey] || {};
-      return {
-        path: pathKey,
-        name: pathKey.split('/').pop(),
-        title: pathKey.split('/').pop(),
-        cleanTitle: meta.cleanTitle || meta.title || pathKey.split('/').pop(),
-        posterUrl: meta.posterUrl || null,
-        category: pathKey.startsWith('Peliculas')
-          ? 'Peliculas'
-          : pathKey.startsWith('Series')
-          ? 'Series'
-          : pathKey.startsWith('Anime')
-          ? 'Anime'
-          : 'Videos_Personales'
-      };
-    })
-    .filter(Boolean);
-
   const displayedItems = (() => {
     switch (selectedFilter) {
-      case 'favorites':
-        return favoriteItems;
       case 'movies':
         return movies;
       case 'series':
@@ -262,50 +216,12 @@ export default function StreamingView({ addToast }) {
         </div>
       )}
 
-      {/* Shelf: Mi Lista (estante destacado si hay títulos guardados y no estamos en el filtro Mi Lista) */}
-      {favoriteItems.length > 0 && selectedFilter !== 'favorites' && (
-        <div className="space-y-3 pt-2">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <Bookmark className="w-4 h-4 text-red-500 fill-current" />
-              <h2 className="text-base font-bold tracking-tight text-white">
-                Mi Lista
-              </h2>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-medium">
-                {favoriteItems.length}
-              </span>
-            </div>
-            {favoriteItems.length > 6 && (
-              <button
-                onClick={() => setSelectedFilter('favorites')}
-                className="text-xs font-semibold text-red-400 hover:text-red-300 transition-colors"
-              >
-                Ver todos ({favoriteItems.length})
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5">
-            {favoriteItems.slice(0, 6).map((item, idx) => (
-              <VerticalPosterCard
-                key={item.path || idx}
-                item={item}
-                metadata={metadata}
-                isFavorite={true}
-                onToggleFavorite={handleToggleFavorite}
-                onClick={() => handleCardClick(item)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* 3. Toolbar de Filtros y Sincronización */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-slate-800/80">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
           {[
             { id: 'all', label: 'Todos', count: allItems.length },
-            { id: 'favorites', label: 'Mi Lista', count: favoriteItems.length, icon: Bookmark },
             { id: 'movies', label: 'Películas', count: movies.length },
             { id: 'series', label: 'Series', count: series.length },
             { id: 'anime', label: 'Anime', count: anime.length },
@@ -369,21 +285,9 @@ export default function StreamingView({ addToast }) {
               key={item.path || idx}
               item={item}
               metadata={metadata}
-              isFavorite={favorites.includes(item.path)}
-              onToggleFavorite={handleToggleFavorite}
               onClick={() => handleCardClick(item)}
             />
           ))}
-        </div>
-      ) : selectedFilter === 'favorites' ? (
-        <div className="py-20 text-center rounded-3xl bg-dark-900 border border-slate-800">
-          <Bookmark className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-sm font-bold text-white mb-1">
-            Tu lista de favoritos está vacía
-          </h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            Guarda películas, series o videos en "Mi Lista" usando el ícono de marcador en cualquier portada para acceder rápidamente a ellos.
-          </p>
         </div>
       ) : (
         <div className="py-20 text-center rounded-3xl bg-dark-900 border border-slate-800">

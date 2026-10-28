@@ -89,6 +89,13 @@ export default function App() {
     return () => clearInterval(interval);
   }, [user, loadStats, loadCatalogData]);
 
+  // Limpieza de datos obsoletos de usuario en localStorage (Mi Lista / Favoritos)
+  useEffect(() => {
+    try {
+      localStorage.removeItem('cmh_favorites');
+    } catch (e) {}
+  }, []);
+
   // Global Ctrl+K / Cmd+K listener
   useEffect(() => {
     const handleKeyDown = (e) => {

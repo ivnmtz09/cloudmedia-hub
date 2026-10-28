@@ -73,11 +73,17 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const rawTitle = req.query.title || req.query.name || req.body?.title || req.body?.name || '';
+  const pathParam = req.query.path || req.body?.path || '';
+  const extractedTitle = pathParam ? pathParam.split('/').pop().replace(/\.[^/.]+$/, '') : '';
+  const rawTitle = req.query.title || req.query.name || req.body?.title || req.body?.name || extractedTitle || '';
   const forcedType = req.query.type || req.body?.type;
 
   if (!rawTitle) {
-    return res.status(400).json({ error: 'Parámetro title o name requerido' });
+    return res.status(200).json({
+      success: true,
+      metadata: {},
+      item: {}
+    });
   }
 
   try {

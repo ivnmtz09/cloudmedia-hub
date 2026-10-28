@@ -2,14 +2,11 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Play, Star, Calendar, HardDrive, Film, Tv,
-  Shield, User, ChevronDown, CheckCircle2, Clock, Bookmark,
-  BookmarkCheck, Sparkles
+  Shield, User, ChevronDown, CheckCircle2, Clock, Sparkles
 } from 'lucide-react';
 import {
   fetchMediaItemMetadata,
   fetchSeriesTree,
-  fetchFavorites,
-  toggleFavorite,
   fetchCatalog,
   fetchMetadata
 } from '../../services/api';
@@ -28,9 +25,7 @@ export default function MediaDetailsView({ media: propMedia, onBack: propOnBack,
   const [loading, setLoading] = useState(true);
   const [playingItem, setPlayingItem] = useState(null);
 
-  // Estados para Favoritos y Títulos Similares
-  const [favorites, setFavorites] = useState([]);
-  const [isTogglingFav, setIsTogglingFav] = useState(false);
+  // Estados para Títulos Similares
   const [similarTitles, setSimilarTitles] = useState([]);
   const [catalogMetadata, setCatalogMetadata] = useState({});
 
@@ -65,27 +60,6 @@ export default function MediaDetailsView({ media: propMedia, onBack: propOnBack,
     };
   }, [mediaPath, mediaName]);
 
-  // Cargar lista de favoritos del usuario
-  useEffect(() => {
-    fetchFavorites()
-      .then((favs) => setFavorites(favs || []))
-      .catch(() => {});
-  }, []);
-
-  const isFavorite = favorites.includes(mediaPath);
-
-  const handleToggleFavorite = async () => {
-    if (isTogglingFav || !mediaPath) return;
-    setIsTogglingFav(true);
-    try {
-      const res = await toggleFavorite(mediaPath);
-      setFavorites(res.favorites || []);
-    } catch (e) {
-      console.warn('Error alternando favorito:', e);
-    } finally {
-      setIsTogglingFav(false);
-    }
-  };
 
   // Si es Serie o Anime, cargar árbol de temporadas y episodios
   const isSeries = metadata?.type === 'serie' || mediaPath?.startsWith('Series');
@@ -407,7 +381,7 @@ export default function MediaDetailsView({ media: propMedia, onBack: propOnBack,
               ))}
             </div>
 
-            {/* BOTONES DE ACCIÓN: "Reproducir" y "Guardar en Mi Lista" */}
+            {/* BOTÓN DE ACCIÓN: "Reproducir" */}
             <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
               <button
                 onClick={() => handlePlayMedia(propMedia || { path: mediaPath, name: mediaName, title })}
@@ -426,24 +400,7 @@ export default function MediaDetailsView({ media: propMedia, onBack: propOnBack,
                 </div>
               </button>
 
-              {/* Botón Favorito / Mi Lista */}
-              <button
-                type="button"
-                onClick={handleToggleFavorite}
-                disabled={isTogglingFav}
-                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-4 sm:py-5 rounded-2xl font-bold text-sm sm:text-base border transition-all duration-200 active:scale-95 touch-manipulation shadow-lg ${
-                  isFavorite
-                    ? 'bg-red-950/80 hover:bg-red-900/90 text-red-300 border-red-500/50 shadow-red-600/20'
-                    : 'bg-gray-800/80 hover:bg-gray-700/80 text-slate-200 border-slate-700/80 hover:border-slate-600'
-                }`}
-              >
-                {isFavorite ? (
-                  <BookmarkCheck className="w-5 h-5 text-red-500 fill-red-500" />
-                ) : (
-                  <Bookmark className="w-5 h-5 text-slate-300" />
-                )}
-                <span>{isFavorite ? 'En Mi Lista' : 'Guardar en Mi Lista'}</span>
-              </button>
+
             </div>
 
             {/* Sinopsis */}
@@ -609,11 +566,6 @@ export default function MediaDetailsView({ media: propMedia, onBack: propOnBack,
                   key={item.path || idx}
                   item={item}
                   metadata={catalogMetadata}
-                  isFavorite={favorites.includes(item.path)}
-                  onToggleFavorite={async (toggledItem) => {
-                    const res = await toggleFavorite(toggledItem.path);
-                    setFavorites(res.favorites || []);
-                  }}
                   onClick={() => {
                     navigate(`/media/${encodeURIComponent(item.path)}`);
                     window.scrollTo({ top: 0, behavior: 'smooth' });

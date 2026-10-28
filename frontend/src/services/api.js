@@ -272,6 +272,13 @@ function failoverToBackupServer() {
 function resolveRequestUrl(pathOrUrl, currentBase) {
   if (typeof pathOrUrl !== 'string') return pathOrUrl;
 
+  // Redirigir cualquier petición fantasma antigua a las nuevas funciones Serverless de Vercel
+  if (pathOrUrl.includes('/api/media/catalog')) {
+    pathOrUrl = pathOrUrl.replace('/api/media/catalog', '/api/catalog');
+  } else if (pathOrUrl.includes('/api/media-info') || pathOrUrl.includes('/api/media/')) {
+    pathOrUrl = pathOrUrl.replace(/\/api\/media(-info|\/[^?]*)/, '/api/metadata');
+  }
+
   if (!pathOrUrl.startsWith('http://') && !pathOrUrl.startsWith('https://')) {
     return `${currentBase}${pathOrUrl.startsWith('/') ? '' : '/'}${pathOrUrl}`;
   }
@@ -707,7 +714,8 @@ export function getSubtitleUrl(mediaPath, subtitleTrackIndex = 0, start = 0) {
 }
 
 export async function fetchMediaInfo(mediaPath) {
-  const res = await apiFetch(`/api/media-info?path=${encodeURIComponent(mediaPath)}`);
+  const cleanTitle = mediaPath ? mediaPath.split('/').pop().replace(/\.[^/.]+$/, '') : '';
+  const res = await apiFetch(`/api/metadata?title=${encodeURIComponent(cleanTitle)}&path=${encodeURIComponent(mediaPath || '')}`);
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     throw new Error(errorData.error || 'Error al obtener la información técnica del video');
@@ -721,9 +729,6 @@ export async function fetchCatalog(folderId = null) {
   if (res.ok) {
     return await res.json();
   }
-  // Fallback para entornos con backend tradicional
-  const fallback = await apiFetch(`/api/media/catalog`).catch(() => null);
-  if (fallback && fallback.ok) return await fallback.json();
   throw new Error('Error al obtener el catálogo de medios');
 }
 
@@ -794,71 +799,6 @@ export async function saveWatchProgress({ path: mediaPath, currentTime, duration
   });
   if (!res.ok) return null;
   return await res.json();
-}
-
-// ================= FAVORITES (MI LISTA) =================
-export async function fetchFavorites() {
-  try {
-    const res = await apiFetch(`${API_BASE}/api/favorites`);
-    if (res.ok) {
-      const data = await res.json();
-      const list = Array.isArray(data.favorites) ? data.favorites : [];
-      try {
-        localStorage.setItem('cmh_favorites', JSON.stringify(list));
-      } catch (e) {}
-      return list;
-    }
-  } catch (err) {
-    console.warn('[Favorites] Error en fetchFavorites, usando fallback local:', err);
-  }
-
-  // Fallback a localStorage
-  try {
-    const saved = localStorage.getItem('cmh_favorites');
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
-}
-
-export async function toggleFavorite(mediaPath) {
-  try {
-    const res = await apiFetch(`${API_BASE}/api/favorites/toggle`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: mediaPath })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      try {
-        if (Array.isArray(data.favorites)) {
-          localStorage.setItem('cmh_favorites', JSON.stringify(data.favorites));
-        }
-      } catch (e) {}
-      return data;
-    }
-  } catch (err) {
-    console.warn('[Favorites] Error en toggleFavorite backend, aplicando fallback local:', err);
-  }
-
-  // Fallback local en localStorage
-  try {
-    const saved = localStorage.getItem('cmh_favorites');
-    let list = saved ? JSON.parse(saved) : [];
-    const index = list.indexOf(mediaPath);
-    let isFavorite = false;
-    if (index > -1) {
-      list.splice(index, 1);
-      isFavorite = false;
-    } else {
-      list.push(mediaPath);
-      isFavorite = true;
-    }
-    localStorage.setItem('cmh_favorites', JSON.stringify(list));
-    return { isFavorite, favorites: list };
-  } catch {
-    return { isFavorite: false, favorites: [] };
-  }
 }
 
 // ================= USERS (ADMIN) =================
