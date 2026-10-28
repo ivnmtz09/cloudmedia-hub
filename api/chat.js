@@ -92,3 +92,4 @@ ${catalogContext.length > 0 ? catalogContext.join(', ') : 'Catálogo disponible 
     });
   }
 }
+

@@ -147,31 +147,6 @@ export default function App() {
     return <ServerOfflineFallback onRetry={retryConnection} />;
   }
 
-  // If user is not authenticated, show the public Landing Page
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-opacity duration-500 animate-fade-in">
-        <SplashScreen />
-        <LandingPage onOpenLogin={() => setIsLoginModalOpen(true)} />
-        <LoginModal
-          isOpen={isLoginModalOpen}
-          onClose={() => setIsLoginModalOpen(false)}
-        />
-        <ForcePasswordChangeModal
-          isOpen={isForcePasswordModalOpen}
-          onPasswordChanged={(updatedUser) => {
-            addToast({
-              type: 'success',
-              title: 'Contraseña Actualizada',
-              message: `Bienvenido a CloudMedia Hub, ${updatedUser?.username || 'usuario'}`
-            });
-          }}
-        />
-        <Toast toasts={toasts} onDismiss={dismissToast} />
-      </div>
-    );
-  }
-
   const isMediaDetailsRoute = location.pathname.startsWith('/media/');
 
   return (
@@ -199,6 +174,7 @@ export default function App() {
       }`}>
         <Routes>
           <Route path="/" element={<StreamingView addToast={addToast} />} />
+          <Route path="/landing" element={<LandingPage />} />
           <Route path="/explorer" element={<CloudExplorer addToast={addToast} />} />
           <Route
             path="/quotas"

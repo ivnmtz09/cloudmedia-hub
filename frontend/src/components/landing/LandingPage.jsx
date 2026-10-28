@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import {
-  Play, LogIn, Film, Tv, Cloud, Shield, Sliders, Sparkles,
+  Play, Film, Tv, Cloud, Shield, Sliders, Sparkles,
   HardDrive, Search, Volume2, Palette, ShieldCheck, ChevronRight,
   Maximize2, Laptop, Smartphone, CheckCircle, Database, Layers
 } from 'lucide-react';
@@ -57,7 +58,7 @@ const PREVIEW_ITEMS = [
   }
 ];
 
-export default function LandingPage({ onOpenLogin }) {
+export default function LandingPage() {
   const [isThemeOpen, setIsThemeOpen] = useState(false);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
@@ -115,14 +116,13 @@ export default function LandingPage({ onOpenLogin }) {
               <span className="hidden md:inline">{currentTheme?.name || 'Tema'}</span>
             </button>
 
-            <button
-              type="button"
-              onClick={onOpenLogin}
+            <Link
+              to="/"
               className="min-h-10 flex items-center gap-2 px-4 sm:px-5 rounded-xl bg-theme-accent hover:bg-theme-accent-hover text-white text-xs sm:text-sm font-bold shadow-lg transition-transform active:scale-95 focus-ring"
             >
-              <LogIn className="w-4 h-4" />
-              <span>Iniciar Sesión</span>
-            </button>
+              <Film className="w-4 h-4" />
+              <span>Ver catálogo</span>
+            </Link>
           </div>
         </div>
       </header>
@@ -149,14 +149,13 @@ export default function LandingPage({ onOpenLogin }) {
 
           {/* Botones de Acción con Principio Easing */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-10 animate-stagger-item stagger-delay-4">
-            <button
-              type="button"
-              onClick={onOpenLogin}
+            <Link
+              to="/"
               className="w-full sm:w-auto min-h-12 flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-xl bg-theme-accent hover:bg-theme-accent-hover text-white text-sm font-bold shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0 focus-ring"
             >
               <Play className="w-4 h-4 fill-white" />
-              <span>Acceder a Mi Cuenta</span>
-            </button>
+              <span>Ver catálogo</span>
+            </Link>
 
             <a
               href="#showcase"
@@ -394,19 +393,18 @@ export default function LandingPage({ onOpenLogin }) {
         {/* ================= BANNER INVITACIÓN ================= */}
         <div className="mt-16 p-8 rounded-3xl bg-theme-surface border border-theme-border text-center shadow-xl">
           <h2 className="text-xl sm:text-2xl font-bold text-theme-text mb-2">
-            Inicia sesión para acceder a tu catálogo
+            Explora todo nuestro catálogo en la nube
           </h2>
           <p className="text-xs sm:text-sm text-theme-muted mb-6 max-w-lg mx-auto">
-            Accede con tus credenciales seguras para comenzar la reproducción y gestión de tus archivos multimedia.
+            Acceso libre e inmediato a películas, series y anime sincronizados directamente con Google Drive.
           </p>
-          <button
-            type="button"
-            onClick={onOpenLogin}
+          <Link
+            to="/"
             className="min-h-12 inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-theme-accent hover:bg-theme-accent-hover text-white text-sm font-bold shadow-lg transition-transform active:scale-95 focus-ring"
           >
-            <LogIn className="w-4 h-4" />
-            <span>Iniciar Sesión Ahora</span>
-          </button>
+            <Film className="w-4 h-4" />
+            <span>Ver catálogo</span>
+          </Link>
         </div>
       </main>
 

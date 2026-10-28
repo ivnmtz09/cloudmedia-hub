@@ -102,3 +102,4 @@ Responde ÚNICAMENTE con este JSON:
     return fallback;
   }
 }
+

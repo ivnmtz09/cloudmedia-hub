@@ -68,9 +68,7 @@ export default function StreamingView({ addToast }) {
   };
 
   useEffect(() => {
-    if (user) {
-      loadAll();
-    }
+    loadAll();
   }, [user]);
 
   const handleToggleFavorite = async (item) => {

@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node backend/src/server.js",
+    "dev": "cd frontend && npm run dev",
+    "start": "cd frontend && npm run preview",
     "build": "cd frontend && npm run build",
     "test": "playwright test",
     "test:ui": "playwright test --ui"
