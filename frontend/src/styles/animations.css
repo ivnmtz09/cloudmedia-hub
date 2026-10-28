@@ -185,6 +185,19 @@
   animation: scaleIn 0.35s var(--ease-spring) both;
 }
 
+@keyframes slideLeft {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-left {
+  animation: slideLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Superficie sólida opaca que reemplaza todo glassmorphism */
 .glass {
   background-color: var(--color-surface, #1a1a1a);
