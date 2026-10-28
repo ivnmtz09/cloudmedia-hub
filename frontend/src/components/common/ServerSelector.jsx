@@ -95,8 +95,8 @@ export default function ServerSelector({ addToast, compact = false }) {
   const vpsLatency = serverInfo.latencies?.vps;
 
   return (
-    <div className="relative inline-block" ref={dropdownRef}>
-      {/* Botón Píldora en Navbar */}
+    <div className={`relative ${compact ? 'w-full' : 'inline-block'}`} ref={dropdownRef}>
+      {/* Botón Píldora en Navbar / Aside */}
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
@@ -104,24 +104,28 @@ export default function ServerSelector({ addToast, compact = false }) {
         aria-haspopup="true"
         aria-label={`Servidor: ${activeServer?.name}. Modo: ${isAuto ? 'Automático' : 'Manual'}`}
         title={`Servidor activo: ${activeServer?.name} (${isAuto ? 'Auto-Failover' : 'Fijo'})\nLocal: ${localLatency ? `${localLatency}ms` : 'Verificando'}\nVPS: ${vpsLatency ? `${vpsLatency}ms` : 'En espera'}`}
-        className={`focus-ring flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all hover:scale-105 active:scale-95 h-9 bg-slate-900/80 border-slate-700/80 hover:border-slate-600 shadow-md backdrop-blur-md select-none ${
-          compact ? 'w-full justify-between' : 'flex-shrink-0'
+        className={`focus-ring flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all active:scale-98 select-none ${
+          compact
+            ? 'w-full justify-between bg-white/5 hover:bg-white/10 border-white/10 text-theme-text'
+            : 'flex-shrink-0 rounded-full h-9 bg-slate-900/80 border-slate-700/80 hover:border-slate-600 shadow-md backdrop-blur-md hover:scale-105'
         }`}
       >
         {/* Punto verde con animación de pulso */}
-        <span className="relative flex h-2 w-2 flex-shrink-0">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-        </span>
-
-        {/* Etiqueta del Servidor Activo */}
-        <div className="flex items-center gap-1 min-w-0">
-          {isAuto && (
-            <Zap className="w-3 h-3 text-amber-400 flex-shrink-0" />
-          )}
-          <span className="text-slate-200 font-bold truncate">
-            {isAuto ? `Auto (${activeServer?.shortName})` : activeServer?.shortName}
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="relative flex h-2 w-2 flex-shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
+
+          {/* Etiqueta del Servidor Activo */}
+          <div className="flex items-center gap-1 min-w-0">
+            {isAuto && (
+              <Zap className="w-3 h-3 text-amber-400 flex-shrink-0" />
+            )}
+            <span className="text-slate-200 font-bold truncate">
+              {isAuto ? `Auto (${activeServer?.shortName})` : activeServer?.shortName}
+            </span>
+          </div>
         </div>
 
         <ChevronDown
@@ -131,11 +135,15 @@ export default function ServerSelector({ addToast, compact = false }) {
         />
       </button>
 
-      {/* Menú Desplegable Flotante */}
+      {/* Menú Desplegable / Acordeón Integrado */}
       {isOpen && (
         <div
           role="menu"
-          className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-gray-900/95 border border-slate-700/90 shadow-2xl backdrop-blur-xl p-2 z-50 animate-scale-in text-xs text-slate-200 divide-y divide-slate-800/80"
+          className={
+            compact
+              ? "w-full mt-2 rounded-xl bg-gray-950/70 border border-white/10 p-2 text-xs text-slate-200 divide-y divide-white/5 animate-fade-in"
+              : "absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-gray-900/95 border border-slate-700/90 shadow-2xl backdrop-blur-xl p-2 z-50 animate-scale-in text-xs text-slate-200 divide-y divide-slate-800/80"
+          }
         >
           {/* Cabecera */}
           <div className="p-2.5 pb-2">
