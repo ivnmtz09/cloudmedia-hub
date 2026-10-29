@@ -61,9 +61,9 @@ export default function MediaDetailsView({ media: propMedia, onBack: propOnBack,
   }, [mediaPath, mediaName]);
 
 
-  // Si es Serie o Anime, cargar árbol de temporadas y episodios
-  const isSeries = metadata?.type === 'serie' || mediaPath?.startsWith('Series');
-  const isAnime = metadata?.type === 'anime' || mediaPath?.startsWith('Anime');
+  // Si es Serie o Anime, cargar árbol de temporadas y episodios (las rutas en Peliculas son estrictamente películas)
+  const isSeries = (metadata?.type === 'serie' || mediaPath?.startsWith('Series')) && !mediaPath?.startsWith('Peliculas');
+  const isAnime = (metadata?.type === 'anime' || mediaPath?.startsWith('Anime')) && !mediaPath?.startsWith('Peliculas');
 
   // Cargar y calcular Títulos Similares en base a géneros, temática y catálogo
   useEffect(() => {
@@ -384,7 +384,16 @@ export default function MediaDetailsView({ media: propMedia, onBack: propOnBack,
             {/* BOTÓN DE ACCIÓN: "Reproducir" */}
             <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
               <button
-                onClick={() => handlePlayMedia(propMedia || { path: mediaPath, name: mediaName, title })}
+                onClick={() => handlePlayMedia(propMedia || {
+                  path: mediaPath,
+                  name: mediaName,
+                  title,
+                  streamUrl: metadata?.streamUrl,
+                  fileId: metadata?.fileId || metadata?.id,
+                  duration: metadata?.duration,
+                  audioTracks: metadata?.audioTracks,
+                  subtitleTracks: metadata?.subtitleTracks
+                })}
                 className="group w-full sm:w-auto inline-flex items-center justify-center gap-3.5 sm:gap-4 px-6 sm:px-12 py-3.5 sm:py-5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-base sm:text-xl shadow-2xl shadow-red-600/40 border border-white/20 transition-all duration-300 transform hover:scale-[1.02] active:scale-95 touch-manipulation"
               >
                 <div className="w-10 h-10 rounded-full bg-white text-red-600 flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform">

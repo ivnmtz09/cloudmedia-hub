@@ -74,6 +74,14 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+  // Si se solicita información de series o árbol de temporadas
+  if (req.query?.category === 'Series' || req.query?.category === 'Anime' || req.url?.includes('/series')) {
+    return res.status(200).json({
+      success: true,
+      tree: []
+    });
+  }
+
   const pathParam = req.query.path || req.body?.path || '';
   const extractedTitle = pathParam ? pathParam.split('/').pop().replace(/\.[^/.]+$/, '') : '';
   const rawTitle = req.query.title || req.query.name || req.body?.title || req.body?.name || extractedTitle || '';
@@ -87,13 +95,24 @@ export default async function handler(req, res) {
     });
   }
 
-  // Si existe en el catálogo predeterminado y no hay TMDB_API_KEY, responder con los metadatos cacheados
-  if (pathParam && DEFAULT_METADATA_MAP[pathParam] && !process.env.TMDB_API_KEY) {
-    const cached = DEFAULT_METADATA_MAP[pathParam];
+  // Si existe en el catálogo verificado predeterminado
+  if (pathParam && DEFAULT_METADATA_MAP[pathParam]) {
+    const verified = DEFAULT_METADATA_MAP[pathParam];
+    if (process.env.TMDB_API_KEY) {
+      try {
+        const tmdbData = await queryTMDB(verified.cleanTitle, verified.type || 'pelicula', verified.year);
+        if (tmdbData && tmdbData.tmdbId) {
+          const merged = { ...verified, ...tmdbData };
+          return res.status(200).json({ success: true, metadata: merged, item: merged });
+        }
+      } catch (err) {
+        console.warn('[Metadata API] Error consultando TMDB para elemento conocido:', err.message);
+      }
+    }
     return res.status(200).json({
       success: true,
-      metadata: cached,
-      item: cached
+      metadata: verified,
+      item: verified
     });
   }
 

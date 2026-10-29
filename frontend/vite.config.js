@@ -2,6 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import catalogHandler from './api/catalog.js';
 import metadataHandler from './api/metadata.js';
+import seriesHandler from './api/metadata/series.js';
+import streamHandler from './api/stream.js';
 import statsHandler from './api/stats.js';
 import chatHandler from './api/chat.js';
 import watchProgressHandler from './api/watch-progress.js';
@@ -10,6 +12,8 @@ function serverlessApiPlugin() {
   const routes = {
     '/api/catalog': catalogHandler,
     '/api/metadata': metadataHandler,
+    '/api/metadata/series': seriesHandler,
+    '/api/stream': streamHandler,
     '/api/stats': statsHandler,
     '/api/chat': chatHandler,
     '/api/watch-progress': watchProgressHandler

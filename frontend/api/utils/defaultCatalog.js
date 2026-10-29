@@ -134,8 +134,8 @@ export const DEFAULT_CATALOG_ITEMS = [
     id: 'the-avengers',
     fileId: 'the-avengers',
     name: 'The avengers Los Vengadores 1080p DUAL 5.17 GB.mkv',
-    cleanTitle: 'Avengers: Los Vengadores',
-    title: 'Avengers: Los Vengadores',
+    cleanTitle: 'The Avengers',
+    title: 'The Avengers - Los Vengadores (2012)',
     type: 'pelicula',
     seasonNumber: null,
     year: 2012,
@@ -145,14 +145,30 @@ export const DEFAULT_CATALOG_ITEMS = [
     size: 5551390720,
     humanSize: '5.17 GB',
     mimeType: 'video/x-matroska',
-    streamUrl: '/api/stream?fileId=the-avengers',
+    streamUrl: '/api/stream?path=Peliculas%2FThe%20avengers%20Los%20Vengadores%201080p%20DUAL%205.17%20GB.mkv',
     posterUrl: 'https://image.tmdb.org/t/p/w500/cWNIua1iPA4kGyQxJGvnx7UIzoT.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/original/86IbFy98QjRIqg6WanKYb9tXNbJ.jpg',
     poster_path: '/cWNIua1iPA4kGyQxJGvnx7UIzoT.jpg',
     backdrop_path: '/86IbFy98QjRIqg6WanKYb9tXNbJ.jpg',
     genres: ['Ciencia ficción', 'Acción', 'Aventura'],
     badges: ['1080P', 'DUAL'],
-    synopsis: 'Cuando un enemigo inesperado surge como una gran amenaza para la seguridad mundial, Nick Fury reúne a Iron Man, Capitán América, Thor, Hulk, Black Widow y Hawkeye.',
+    synopsis: 'Cuando un enemigo inesperado surge como una gran amenaza para la seguridad mundial, Nick Fury, director de la agencia de paz internacional conocida como S.H.I.E.L.D., se encuentra en la necesidad de reunir a un equipo para salvar al mundo de Loki y su ejército invasor: Iron Man, Capitán América, Thor, Hulk, Viuda Negra y Ojo de Halcón.',
+    cast: [
+      { name: 'Robert Downey Jr.', character: 'Tony Stark / Iron Man' },
+      { name: 'Chris Evans', character: 'Steve Rogers / Captain America' },
+      { name: 'Mark Ruffalo', character: 'Bruce Banner / Hulk' },
+      { name: 'Chris Hemsworth', character: 'Thor Odinson' },
+      { name: 'Scarlett Johansson', character: 'Natasha Romanoff / Black Widow' },
+      { name: 'Jeremy Renner', character: 'Clint Barton / Hawkeye' }
+    ],
+    duration: 8570,
+    audioTracks: [
+      { index: 0, title: 'Español Latino (AC3 5.1)', language: 'spa', isDefault: true },
+      { index: 1, title: 'Inglés Original (AC3 5.1)', language: 'eng', isDefault: false }
+    ],
+    subtitleTracks: [
+      { index: 0, title: 'Español Latino', language: 'spa', isDefault: true }
+    ],
     modifiedTime: '2026-10-25T12:00:00.000Z'
   },
   {

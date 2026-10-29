@@ -38,6 +38,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode, nextEpi
   const [isMiniMode, setIsMiniMode] = useState(false);
   const [isIdle, setIsIdle] = useState(false); // Inactividad del usuario
   const [showRemainingTime, setShowRemainingTime] = useState(false);
+  const [playbackError, setPlaybackError] = useState(null);
 
   // Binge-Watching: Autoplay Siguiente Episodio estilo Netflix
   const NEXT_EPISODE_COUNTDOWN_DURATION = 10;
@@ -60,6 +61,7 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode, nextEpi
     dismissedNextEpisodeRef.current = false;
     hasTriggeredNextEpisodeRef.current = false;
     setShowNextOverlay(false);
+    setPlaybackError(null);
     setCountdownSeconds(NEXT_EPISODE_COUNTDOWN_DURATION);
     setNextThumbError(false);
     if (nextEpisodeTimerRef.current) {
@@ -935,6 +937,14 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode, nextEpi
               setIsPlaying(true);
             }}
             onPause={handlePause}
+            onError={(e) => {
+              console.warn('[VideoPlayerModal] Error cargando fuente de video:', e);
+              setIsBuffering(false);
+              setIsPlaying(false);
+              setPlaybackError(
+                'No se pudo reproducir este archivo multimedia. Verifique que el archivo exista en el almacenamiento local montado (PC_Storage) o que Google Drive esté conectado con permisos de lectura.'
+              );
+            }}
             onEnded={() => {
               setIsPlaying(false);
               if (onNextEpisode && !dismissedNextEpisodeRef.current) {
@@ -960,12 +970,46 @@ export default function VideoPlayerModal({ item, onClose, onNextEpisode, nextEpi
           </video>
 
           {/* Buffering Spinner */}
-          {isBuffering && (
+          {isBuffering && !playbackError && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/60 pointer-events-none z-20">
               <div
                 className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-4 border-t-transparent animate-spin"
                 style={{ borderColor: `${accentColor}30`, borderTopColor: accentColor }}
               />
+            </div>
+          )}
+
+          {/* Error de Reproducción */}
+          {playbackError && (
+            <div className="absolute inset-0 z-40 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 mb-4 shadow-xl">
+                <VolumeX className="w-7 h-7 sm:w-8 sm:h-8" />
+              </div>
+              <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Error de Transmisión</h3>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-md mb-6 leading-relaxed">
+                {playbackError}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setPlaybackError(null);
+                    setIsBuffering(true);
+                    if (videoRef.current) {
+                      videoRef.current.load();
+                      videoRef.current.play().catch(() => {});
+                    }
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium text-xs sm:text-sm transition-all shadow-lg active:scale-95"
+                >
+                  Reintentar
+                </button>
+                <button
+                  onClick={onClose}
+                  className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-xs sm:text-sm transition-all active:scale-95"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           )}
 
