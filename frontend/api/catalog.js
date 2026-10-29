@@ -1,5 +1,6 @@
 import { getGoogleDriveClient } from './utils/googleDrive.js';
 import { cleanTitleWithRegex } from './utils/gemini.js';
+import { DEFAULT_CATALOG_ITEMS } from './utils/defaultCatalog.js';
 
 // Extensiones de video reconocidas
 const VIDEO_EXTENSIONS = ['.mp4', '.mkv', '.webm', '.avi', '.mov', '.m4v', '.ts', '.flv'];
@@ -107,40 +108,36 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const folderId = req.query.folderId || process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
+  const folderId = req.query?.folderId || process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
+  let allItems = [];
 
-  if (!folderId) {
-    return res.status(400).json({
-      error: 'ID de carpeta raíz de Google Drive no especificado.',
-      help: 'Configura la variable de entorno GOOGLE_DRIVE_ROOT_FOLDER_ID en Vercel o pásala como parámetro: /api/catalog?folderId=TU_FOLDER_ID'
-    });
+  if (folderId) {
+    try {
+      const drive = getGoogleDriveClient();
+      allItems = await scanDriveFolder(drive, folderId);
+    } catch (error) {
+      console.warn('[API Catalog] Google Drive API no disponible o sin credenciales activas, activando catálogo predeterminado:', error.message);
+    }
   }
 
-  try {
-    const drive = getGoogleDriveClient();
-    const allItems = await scanDriveFolder(drive, folderId);
-
-    const movies = allItems.filter((i) => i.category === 'movies');
-    const series = allItems.filter((i) => i.category === 'series');
-    const anime = allItems.filter((i) => i.category === 'anime');
-    const personal = allItems.filter((i) => i.category === 'personal');
-
-    return res.status(200).json({
-      success: true,
-      folderId,
-      total: allItems.length,
-      movies,
-      series,
-      anime,
-      personal,
-      all: allItems
-    });
-  } catch (error) {
-    console.error('[API Catalog] Error consultando Google Drive API v3:', error);
-    return res.status(500).json({
-      error: 'Fallo al consultar el catálogo de Google Drive',
-      message: error.message,
-      details: error.stack
-    });
+  // Si Google Drive no devolvió elementos o falló la conexión, usar el catálogo predeterminado
+  if (!allItems || allItems.length === 0) {
+    allItems = [...DEFAULT_CATALOG_ITEMS];
   }
+
+  const movies = allItems.filter((i) => i.category === 'movies');
+  const series = allItems.filter((i) => i.category === 'series');
+  const anime = allItems.filter((i) => i.category === 'anime');
+  const personal = allItems.filter((i) => i.category === 'personal');
+
+  return res.status(200).json({
+    success: true,
+    folderId: folderId || 'default',
+    total: allItems.length,
+    movies,
+    series,
+    anime,
+    personal,
+    all: allItems
+  });
 }

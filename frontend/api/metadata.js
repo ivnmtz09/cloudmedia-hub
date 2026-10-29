@@ -1,4 +1,5 @@
 import { cleanTitleWithGemini, cleanTitleWithRegex } from './utils/gemini.js';
+import { DEFAULT_METADATA_MAP } from './utils/defaultCatalog.js';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 
@@ -81,8 +82,18 @@ export default async function handler(req, res) {
   if (!rawTitle) {
     return res.status(200).json({
       success: true,
-      metadata: {},
-      item: {}
+      metadata: DEFAULT_METADATA_MAP,
+      item: DEFAULT_METADATA_MAP
+    });
+  }
+
+  // Si existe en el catálogo predeterminado y no hay TMDB_API_KEY, responder con los metadatos cacheados
+  if (pathParam && DEFAULT_METADATA_MAP[pathParam] && !process.env.TMDB_API_KEY) {
+    const cached = DEFAULT_METADATA_MAP[pathParam];
+    return res.status(200).json({
+      success: true,
+      metadata: cached,
+      item: cached
     });
   }
 

@@ -4,7 +4,6 @@ import { Film, FolderOpen, Search, Menu, X, Sparkles } from 'lucide-react';
 import { CloudMediaLogo } from './CloudMediaLogo';
 import { ThemePanel } from './ThemePanel';
 import { SearchBar } from '../search/SearchBar';
-import { ProfileModal } from '../profile/ProfileModal';
 import NavbarAside from './NavbarAside';
 
 export default function Navbar({
@@ -17,7 +16,6 @@ export default function Navbar({
   const location = useLocation();
   const [isThemePanelOpen, setIsThemePanelOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const isMac = typeof window !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent || '');
   const shortcutLabel = isMac ? '⌘K' : 'Ctrl K';
@@ -185,13 +183,8 @@ export default function Navbar({
       <NavbarAside
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
-        stats={stats}
-        isRefreshingStats={isRefreshingStats}
-        onRefreshStats={onRefreshStats}
         onOpenSearch={onOpenSearch}
         onOpenTheme={() => setIsThemePanelOpen(true)}
-        onOpenProfile={() => setIsProfileOpen(true)}
-        addToast={addToast}
         shortcutLabel={shortcutLabel}
       />
 
@@ -199,13 +192,6 @@ export default function Navbar({
       <ThemePanel
         isOpen={isThemePanelOpen}
         onClose={() => setIsThemePanelOpen(false)}
-      />
-
-      {/* Modal de Edición de Perfil */}
-      <ProfileModal
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-        addToast={addToast}
       />
     </>
   );

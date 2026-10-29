@@ -82,12 +82,10 @@ export default function App() {
 
   useEffect(() => {
     loadStats();
-    if (user) {
-      loadCatalogData();
-    }
+    loadCatalogData();
     const interval = setInterval(loadStats, 60000);
     return () => clearInterval(interval);
-  }, [user, loadStats, loadCatalogData]);
+  }, [loadStats, loadCatalogData]);
 
   // Limpieza de datos obsoletos de usuario en localStorage (Mi Lista / Favoritos)
   useEffect(() => {
